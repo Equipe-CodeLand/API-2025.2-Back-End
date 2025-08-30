@@ -1,15 +1,12 @@
 import { Request, Response } from "express";
-
-
-const usuarios: { id: number; nome: string }[] = [];
+import { UsuarioModel } from "../models/Usuario";
 
 export const cadastrarUsuario = (req: Request, res: Response) => {
   const { nome } = req.body;
-  const novoUsuario = { id: Date.now(), nome };
-  usuarios.push(novoUsuario);
+  const novoUsuario = UsuarioModel.criar(nome);
   res.status(201).json(novoUsuario);
 };
 
 export const listarUsuarios = (req: Request, res: Response) => {
-  res.json(usuarios);
+  res.json(UsuarioModel.listar());
 };
