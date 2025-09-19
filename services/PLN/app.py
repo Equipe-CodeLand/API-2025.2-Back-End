@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import pandas as pd
 from datetime import datetime, timedelta
+from generator import gerar_relatorio_texto
 
 # ==============================
 # Classe de Relatório
@@ -111,7 +112,9 @@ def gerar_relatorio():
 @app.get("/relatorio-skus")
 def gerar_relatorio_skus():
     rel = RelatorioEstoque()
-    return {"relatorio_por_sku": rel.por_sku()}
+    dados = rel.por_sku()
+    texto = gerar_relatorio_texto(dados)
+    return texto
 
 
 #uvicorn app:app --reload --port 5000
