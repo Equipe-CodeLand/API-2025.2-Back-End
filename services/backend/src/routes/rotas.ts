@@ -1,10 +1,21 @@
 import { Router } from "express";
+import { cadastrarUsuario, listarUsuarios } from "../controllers/usuarioController";
+import axios from "axios";
 import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
 import { Usuario } from "../models/Usuario";
 
+const PLN_URL = "http://localhost:5000";
+
 const router = Router();
 
+/* Rota de usuário */
+router.post("/usuario/cadastrar", cadastrarUsuario);
+
+router.get("/usuario/listar", listarUsuarios);
+
+
+/* Rota para autenticação */
 const JWT_SECRET: string = process.env.JWT_SECRET!;
 if (!JWT_SECRET) {
   console.error("JWT_SECRET não configurado. Crie um .env com JWT_SECRET.");
@@ -55,6 +66,27 @@ router.post("/login", async (req, res) => {
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: "Erro no servidor" });
+  }
+});
+
+
+
+/* Rotas dos relatórios */
+router.get("/relatorios/geral", async (req, res) => {
+  try {
+    const response = await axios.get(`${PLN_URL}/relatorio`);
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ erro: "Erro ao buscar relatório do PLN" });
+  }
+});
+
+router.get("/relatorios/skus", async (req, res) => {
+  try {
+    const response = await axios.get(`${PLN_URL}/relatorio-skus`);
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ erro: "Erro ao buscar relatório de SKUs do PLN" });
   }
 });
 
