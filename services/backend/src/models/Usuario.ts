@@ -8,6 +8,8 @@ export class Usuario extends Model {
   public status!: string;
   public username!: string;
   public password!: string;
+  public cargo!: string;
+  public receberEmails!: boolean;
 }
 
 Usuario.init(
@@ -19,14 +21,14 @@ Usuario.init(
     },
     nome: {
       type: DataTypes.STRING(100),
-      allowNull: true, // Mudei para true ou remova se não precisar
+      allowNull: false,
     },
     status: {
       type: DataTypes.STRING(20),
       allowNull: false,
       defaultValue: Status.ATIVO,
     },
-    username: {
+    email: {
       type: DataTypes.STRING(100),
       allowNull: false,
       unique: true,
@@ -34,6 +36,15 @@ Usuario.init(
     password: {
       type: DataTypes.STRING(255),
       allowNull: false,
+    },
+      cargo: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+    },
+    receberEmails: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
     },
   },
   {

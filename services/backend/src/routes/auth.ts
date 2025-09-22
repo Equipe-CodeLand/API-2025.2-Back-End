@@ -14,16 +14,16 @@ if (!JWT_SECRET) {
 const JWT_EXPIRES_IN = Number(process.env.JWT_EXPIRES_IN_SECONDS) || 3600;
 
 router.post("/registro", async (req, res) => {
-  const { username, password, nome } = req.body;
-  if (!username || !password)
-    return res.status(400).json({ error: "Username e senha são obrigatórios" });
+  const { email, password, nome } = req.body;
+  if (!email || !password)
+    return res.status(400).json({ error: "Email e senha são obrigatórios" });
 
   try {
     const hash = await bcrypt.hash(password, 10);
     const user = await Usuario.create({ 
-      username, 
+      email, 
       password: hash,
-      nome: nome || username
+      nome: nome || email
     });
     res.json({ message: "Usuário registrado", id: user.id });
   } catch (err: any) {
@@ -36,18 +36,18 @@ router.post("/registro", async (req, res) => {
 });
 
 router.post("/login", async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password)
-    return res.status(400).json({ error: "Username e password obrigatórios" });
+  const { email, password } = req.body;
+  if (!email || !password)
+    return res.status(400).json({ error: "Email e password obrigatórios" });
 
   try {
-    const user = await Usuario.findOne({ where: { username } });
+    const user = await Usuario.findOne({ where: { email } });
     if (!user) return res.status(401).json({ error: "Usuário não encontrado" });
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ error: "Senha incorreta" });
 
-    const payload = { id: user.id, username: user.username };
+    const payload = { id: user.id, email: user.email };
     const options: SignOptions = { expiresIn: JWT_EXPIRES_IN };
 
     const token = jwt.sign(payload, JWT_SECRET, options);

@@ -1,12 +1,11 @@
 import { Router } from "express";
-import { cadastrarUsuario, listarUsuarios } from "../controllers/usuarioController";
+import { cadastrarUsuario} from "../controllers/UsuarioController";
 
 const router = Router();
 
-// /usuario/cadastrar
-router.post("/cadastrar", cadastrarUsuario);
+router.post("/cadastro/usuario", cadastrarUsuario);
 
-// /usuario/listar
-router.get("/listar", listarUsuarios);
+
+// rota de listagem
 
 export default router;
