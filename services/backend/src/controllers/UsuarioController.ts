@@ -41,3 +41,35 @@ export const cadastrarUsuario = async (req: Request, res: Response) => {
     return res.status(500).json({ mensagem: "Erro ao cadastrar usuário." });
   }
 };
+
+export const listarUsuarios = async (req: Request, res: Response) => {
+  try {
+    const usuarios = await Usuario.findAll({
+      attributes: { exclude: ["password"] }
+    });
+
+    return res.status(200).json(usuarios);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ mensagem: "Erro ao buscar usuários." });
+  }
+};
+
+export const listarUsuario = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const usuario = await Usuario.findByPk(id, {
+      attributes: { exclude: ["password"] }
+    });
+
+    if (!usuario) {
+      return res.status(404).json({ mensagem: "Usuário não encontrado." });
+    }
+
+    return res.status(200).json(usuario);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ mensagem: "Erro ao buscar usuário." });
+  }
+};

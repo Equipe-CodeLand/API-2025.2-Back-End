@@ -1,4 +1,4 @@
 export enum Cargo {
   ADMINISTRADOR = "Administrador",
-  FUNCIONARIO = "Funcionario",
+  FUNCIONARIO = "Funcionário",
 }
