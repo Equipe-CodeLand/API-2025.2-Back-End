@@ -1,75 +1,50 @@
 import { Request, Response } from "express";
-import { Usuario } from "../models/Usuario";
-import { Cargo } from "../enum/Cargo";
+import db from "../db/db";
 import bcrypt from "bcryptjs";
 
+// Cadastro de usuário
 export const cadastrarUsuario = async (req: Request, res: Response) => {
-  const { nome, email, senha, cargo, receberEmails } = req.body;
+  const { nome, email, password, cargo } = req.body;
 
-  if (!nome || !email || !senha || !cargo) {
-    return res.status(400).json({ mensagem: "Todos os campos são obrigatórios." });
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ mensagem: "Email inválido." });
-  }
-
-  if (!Object.values(Cargo).includes(cargo)) {
-    return res.status(400).json({ mensagem: "Cargo inválido." });
+  if (!nome || !email || !password) {
+    return res
+      .status(400)
+      .json({ error: "Nome, email e senha são obrigatórios" });
   }
 
   try {
-    const hash = await bcrypt.hash(senha, 10);
+    const hash = await bcrypt.hash(password, 10);
 
-    const novoUsuario = await Usuario.create({
-      nome,
-      email,
-      password: hash,
-      cargo,
-      receberEmails,
+    const [result] = await db.execute(
+      `INSERT INTO usuarios (nome, email, password, cargo, status, receberEmails)
+       VALUES (?, ?, ?, ?, 'ativo', 1)`,
+      [nome, email, hash, cargo || "USUARIO"],
+    );
+
+    return res.status(201).json({
+      message: "Usuário cadastrado com sucesso",
+      id: (result as any).insertId,
     });
-
-    return res.status(201).json(novoUsuario);
   } catch (error: any) {
-    console.error(error);
-
-    if (error.name === "SequelizeUniqueConstraintError") {
-      return res.status(409).json({ mensagem: "Email já cadastrado." });
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(400).json({ error: "Email já cadastrado" });
     }
-
-    return res.status(500).json({ mensagem: "Erro ao cadastrar usuário." });
+    console.error("Erro ao cadastrar usuário:", error);
+    return res.status(500).json({ error: "Erro ao cadastrar usuário" });
   }
 };
 
+// Listagem de usuários
 export const listarUsuarios = async (req: Request, res: Response) => {
   try {
-    const usuarios = await Usuario.findAll({
-      attributes: { exclude: ["password"] }
-    });
-
-    return res.status(200).json(usuarios);
+    const [rows] = await db.query(
+      "SELECT id, nome, email, cargo, status, receberEmails FROM usuarios",
+    );
+    return res.json(rows);
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ mensagem: "Erro ao buscar usuários." });
+    console.error("Erro ao listar usuários:", error);
+    return res.status(500).json({ error: "Erro ao buscar usuários" });
   }
 };
 
-export const listarUsuario = async (req: Request, res: Response) => {
-  const { id } = req.params;
 
-  try {
-    const usuario = await Usuario.findByPk(id, {
-      attributes: { exclude: ["password"] }
-    });
-
-    if (!usuario) {
-      return res.status(404).json({ mensagem: "Usuário não encontrado." });
-    }
-
-    return res.status(200).json(usuario);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ mensagem: "Erro ao buscar usuário." });
-  }
-};
