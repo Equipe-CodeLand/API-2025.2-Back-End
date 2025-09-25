@@ -6,7 +6,9 @@ import {
   listarUsuarios,
 } from "../controllers/usuarioController";
 import db from "../db/db";
+import axios from "axios";
 
+const PLN_URL = "http://127.0.0.1:5000";
 const router = Router();
 
 /* Rotas de usuários */
@@ -57,6 +59,24 @@ router.post("/login", async (req, res) => {
   } catch (err: any) {
     console.error("Erro no login:", err);
     return res.status(500).json({ error: "Erro no servidor" });
+  }
+});
+
+router.get("/relatorios/geral", async (req, res) => {
+  try {
+    const response = await axios.get(`${PLN_URL}/relatorio`);
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ erro: `Erro ao buscar relatório do PLN: ${error.message}` });
+  }
+});
+
+router.get("/relatorios/skus", async (req, res) => {
+  try {
+    const response = await axios.get(`${PLN_URL}/relatorio-skus`);
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ erro: "Erro ao buscar relatório de SKUs do PLN" });
   }
 });
 
