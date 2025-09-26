@@ -4,14 +4,25 @@ import { Router } from "express";
 import {
   cadastrarUsuario,
   listarUsuarios,
-} from "../controllers/usuarioController";
+} from "../controllers/UsuarioController";
 import db from "../db/db";
+import { authMiddleware } from "../middlewares/auth";
+import {
+  gerarRelatorioGeral,
+  gerarRelatorioSku,
+  listarRelatorios,
+} from "../controllers/RelatorioController";
 
 const router = Router();
 
 /* Rotas de usuários */
 router.post("/usuario/cadastrar", cadastrarUsuario);
 router.get("/usuario/listar", listarUsuarios);
+
+// rotas relatório
+router.post("/relatorio/geral", authMiddleware, gerarRelatorioGeral);
+router.post("/relatorio/skus", authMiddleware, gerarRelatorioSku);
+router.get("//relatorio/listar", authMiddleware, listarRelatorios);
 
 /* Rota para autenticação */
 const JWT_SECRET: string = process.env.JWT_SECRET!;
