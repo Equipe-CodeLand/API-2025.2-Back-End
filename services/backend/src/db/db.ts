@@ -1,26 +1,22 @@
-import { Sequelize } from "sequelize";
+import mysql from "mysql2/promise";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-export const sequelize = new Sequelize(
-  process.env.DB_NAME || "meubanco",
-  process.env.DB_USER || "root",
-  process.env.DB_PASSWORD || "",
-  {
-    host: process.env.DB_HOST || "localhost",
-    port: Number(process.env.DB_PORT) || 3306,
-    dialect: "mysql",
-    logging: false,
-  }
-);
+const db = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  connectTimeout: 30000, // 30 segundos
+});
 
-export const connectDB = async (): Promise<void> => {
-  try {
-    await sequelize.authenticate();
-    console.log("✅ Conectado ao MySQL com sucesso!");
-  } catch (error) {
-    console.error("❌ Erro ao conectar no MySQL:", error);
-    process.exit(1);
-  }
-};
+// Teste de conexão
+db.getConnection()
+  .then(() => console.log("Conexão ao banco bem-sucedida!"))
+  .catch((err) => console.error("Erro na conexão ao banco:", err.stack));
+
+export default db;
