@@ -2,16 +2,21 @@ import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
 import { Router } from "express";
 import {
+  atualizarUsuario,
   cadastrarUsuario,
+  deletarUsuario,
   listarUsuarios,
 } from "../controllers/usuarioController";
 import db from "../db/db";
+import { authMiddleware } from "../middlewares/auth";
 
 const router = Router();
 
 /* Rotas de usuários */
 router.post("/usuario/cadastrar", cadastrarUsuario);
 router.get("/usuario/listar", listarUsuarios);
+router.delete("/usuario/deletar/:id", authMiddleware, deletarUsuario);
+router.put("/usuario/atualizar/:id", authMiddleware, atualizarUsuario);
 
 /* Rota para autenticação */
 const JWT_SECRET: string = process.env.JWT_SECRET!;
