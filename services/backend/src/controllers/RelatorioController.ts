@@ -3,7 +3,7 @@ import axios from "axios";
 import { AuthRequest } from "../middlewares/auth";
 import db from "../db/db";
 
-const PLN_URL = "http://localhost:5000";
+const PLN_URL = "http://127.0.0.1:5000";
 
 export async function gerarRelatorioGeral(req: AuthRequest, res: Response) {
   try {
