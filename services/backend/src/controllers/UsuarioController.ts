@@ -2,9 +2,8 @@ import { Request, Response } from "express";
 import db from "../db/db";
 import bcrypt from "bcryptjs";
 
-// Cadastro de usuário
 export const cadastrarUsuario = async (req: Request, res: Response) => {
-  const { nome, email, password, cargo } = req.body;
+  const { nome, email, password, cargo, receberEmails } = req.body;
 
   if (!nome || !email || !password) {
     return res
@@ -15,10 +14,12 @@ export const cadastrarUsuario = async (req: Request, res: Response) => {
   try {
     const hash = await bcrypt.hash(password, 10);
 
+    const receberEmailsDB = receberEmails ? 1 : 0;
+
     const [result] = await db.execute(
       `INSERT INTO usuarios (nome, email, password, cargo, status, receberEmails)
-       VALUES (?, ?, ?, ?, 'ativo', 1)`,
-      [nome, email, hash, cargo || "USUARIO"],
+       VALUES (?, ?, ?, ?, 'ativo', ?)`,
+      [nome, email, hash, cargo || "USUARIO", receberEmailsDB],
     );
 
     return res.status(201).json({

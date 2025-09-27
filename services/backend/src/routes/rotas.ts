@@ -1,22 +1,18 @@
 import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
 import { Router } from "express";
-import {
-  atualizarUsuario,
-  cadastrarUsuario,
-  deletarUsuario,
-  listarUsuarios,
-} from "../controllers/usuarioController";
 import db from "../db/db";
 import { authMiddleware } from "../middlewares/auth";
+import { atualizarUsuario, cadastrarUsuario, deletarUsuario, listarUsuarios } from "../controllers/usuarioController";
+import { isAdminMiddleware } from "../middlewares/isAdmin";
 
 const router = Router();
 
 /* Rotas de usuários */
 router.post("/usuario/cadastrar", cadastrarUsuario);
 router.get("/usuario/listar", listarUsuarios);
-router.delete("/usuario/deletar/:id", authMiddleware, deletarUsuario);
-router.put("/usuario/atualizar/:id", authMiddleware, atualizarUsuario);
+router.delete("/usuario/deletar/:id", deletarUsuario);
+router.put("/usuario/atualizar/:id", atualizarUsuario);
 
 /* Rota para autenticação */
 const JWT_SECRET: string = process.env.JWT_SECRET!;
@@ -53,8 +49,12 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Senha incorreta" });
     }
 
-    // Gera token JWT
-    const payload = { id: user.id, email: user.email };
+    // Gera token JWT incluindo a role
+    const payload = { 
+      id: user.id, 
+      email: user.email,
+      role: user.role
+    };
     const options: SignOptions = { expiresIn: JWT_EXPIRES_IN };
     const token = jwt.sign(payload, JWT_SECRET, options);
 
