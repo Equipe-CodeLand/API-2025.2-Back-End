@@ -3,6 +3,20 @@ from pydantic import BaseModel
 import pandas as pd
 from datetime import datetime, timedelta
 from generator import gerar_relatorio_texto
+from fastapi.middleware.cors import CORSMiddleware
+from salvarRelatorio import salvar_relatorio
+from pydantic import BaseModel
+import os
+
+class RelatorioRequest(BaseModel):
+    usuario_id: int
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+)
 
 # ==============================
 # Classe de Relatório
@@ -102,19 +116,53 @@ class RelatorioEstoque:
 # ==============================
 # FastAPI
 # ==============================
-app = FastAPI()
 
-@app.get("/relatorio")
-def gerar_relatorio():
+
+@app.post("/relatorio")
+def gerar_relatorio(request: RelatorioRequest):
     rel = RelatorioEstoque()
-    return rel.geral()
+    dados = rel.geral()
 
-@app.get("/relatorio-skus")
-def gerar_relatorio_skus():
+    caminho = salvar_relatorio(
+        dados,
+        tipo="geral",
+        como_json=True,
+        chat_id=1,
+        usuario_id=request.usuario_id, 
+        titulo="Relatório Geral"
+    )
+
+    return {"dados": dados, "arquivo": caminho}
+
+
+
+@app.post("/relatorio-skus")
+def gerar_relatorio_skus(request: RelatorioRequest):
     rel = RelatorioEstoque()
     dados = rel.por_sku()
     texto = gerar_relatorio_texto(dados)
-    return texto
+
+    caminho = salvar_relatorio(
+        texto,
+        tipo="sku",
+        como_json=True,
+        chat_id=1,
+        usuario_id=request.usuario_id,
+        titulo="Relatório por SKU"
+    )
+
+    return {"dados": dados, "arquivo": caminho}
+
+@app.get("/relatorio/conteudo")
+def obter_conteudo(caminho: str):
+    if not os.path.exists(caminho):
+        return {"conteudo": "Arquivo não encontrado"}
+    
+    with open(caminho, "r", encoding="utf-8") as f:
+        conteudo = f.read()
+    
+    return {"conteudo": conteudo}
+
 
 
 #uvicorn app:app --reload --port 5000
