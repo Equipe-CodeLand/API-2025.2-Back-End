@@ -9,9 +9,9 @@ import { isAdminMiddleware } from "../middlewares/isAdmin";
 const router = Router();
 
 /* Rotas de usuários */
-router.post("/usuario/cadastrar", cadastrarUsuario);
+router.post("/usuario/cadastrar",cadastrarUsuario);
 router.get("/usuario/listar", listarUsuarios);
-router.delete("/usuario/deletar/:id", deletarUsuario);
+router.delete("/usuario/deletar/:id", authMiddleware, deletarUsuario);
 router.put("/usuario/atualizar/:id", atualizarUsuario);
 
 /* Rota para autenticação */
