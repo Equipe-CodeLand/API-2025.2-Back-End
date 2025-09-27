@@ -9,10 +9,10 @@ import { isAdminMiddleware } from "../middlewares/isAdmin";
 const router = Router();
 
 /* Rotas de usuários */
-router.post("/usuario/cadastrar", cadastrarUsuario);
-router.get("/usuario/listar", listarUsuarios);
-router.delete("/usuario/deletar/:id", deletarUsuario);
-router.put("/usuario/atualizar/:id", atualizarUsuario);
+router.post("/usuario/cadastrar", authMiddleware, isAdminMiddleware, cadastrarUsuario);
+router.get("/usuario/listar", authMiddleware, isAdminMiddleware, listarUsuarios);
+router.delete("/usuario/deletar/:id", authMiddleware, isAdminMiddleware, deletarUsuario);
+router.put("/usuario/atualizar/:id", authMiddleware, isAdminMiddleware, atualizarUsuario);
 
 /* Rota para autenticação */
 const JWT_SECRET: string = process.env.JWT_SECRET!;
@@ -33,18 +33,23 @@ router.post("/login", async (req, res) => {
   try {
     // Busca usuário por email
     const [rows]: [any[], any] = await db.query(
-      "SELECT id, email, password FROM usuarios WHERE email = ?",
+      "SELECT id, email, password, cargo FROM usuarios WHERE email = ?",
       [email],
     );
 
     if (rows.length === 0) {
+      console.log(`Usuário não encontrado para email: ${email}`);
       return res.status(401).json({ error: "Usuário não encontrado" });
     }
 
     const user = rows[0];
+    console.log(`Usuário encontrado: ${user.id}, tentando verificar senha`);
+    console.log(`Hash armazenado: ${user.password.substring(0, 10)}...`);
 
     // Verifica senha
     const valid = await bcrypt.compare(password, user.password);
+    console.log(`Resultado da verificação de senha: ${valid ? "válida" : "inválida"}`);
+    
     if (!valid) {
       return res.status(401).json({ error: "Senha incorreta" });
     }
@@ -53,7 +58,7 @@ router.post("/login", async (req, res) => {
     const payload = { 
       id: user.id, 
       email: user.email,
-      role: user.role
+      cargo: user.cargo
     };
     const options: SignOptions = { expiresIn: JWT_EXPIRES_IN };
     const token = jwt.sign(payload, JWT_SECRET, options);
