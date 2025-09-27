@@ -24,7 +24,7 @@ router.get("/usuario/listar", listarUsuarios);
 // rotas relatório
 router.post("/relatorio/geral", authMiddleware, gerarRelatorioGeral);
 router.post("/relatorio/skus", authMiddleware, gerarRelatorioSku);
-router.get("//relatorio/listar", authMiddleware, listarRelatorios);
+router.get("/relatorio/listar", authMiddleware, listarRelatorios);
 
 /* Rota para autenticação */
 const JWT_SECRET: string = process.env.JWT_SECRET!;
