@@ -2,7 +2,7 @@ import { Response } from "express";
 import { AuthRequest } from "../middlewares/auth";
 import { enviarEmail } from "../services/emailService";
 import db from "../db/db";
-import fs from 'fs';
+import axios from 'axios';
 
 export async function enviarRelatorioPorEmail(req: AuthRequest, res: Response) {
   try {
@@ -41,12 +41,22 @@ export async function enviarRelatorioPorEmail(req: AuthRequest, res: Response) {
 
     const relatorio = relatorioRows[0];
 
-    // Ler conteúdo do arquivo
+    // Ler conteúdo do arquivo através do serviço PLN
     let conteudoRelatorio = "";
     try {
-      conteudoRelatorio = fs.readFileSync(relatorio.caminho_arquivo, 'utf-8');
+      // Usar o serviço PLN para obter o conteúdo do arquivo
+      const PLN_URL = "http://127.0.0.1:5000";
+      const response = await axios.get(`${PLN_URL}/relatorio/conteudo`, {
+        params: { caminho: relatorio.caminho_arquivo }
+      });
+      
+      conteudoRelatorio = response.data.conteudo;
+      
+      if (conteudoRelatorio === "Arquivo não encontrado") {
+        throw new Error("Arquivo do relatório não encontrado no servidor PLN");
+      }
     } catch (error) {
-      console.error('Erro ao ler arquivo do relatório:', error);
+      console.error('Erro ao obter conteúdo do relatório:', error);
       conteudoRelatorio = "Erro ao carregar conteúdo do relatório";
     }
 
