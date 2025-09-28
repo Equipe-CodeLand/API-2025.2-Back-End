@@ -33,17 +33,17 @@ def gerar_relatorio_texto(dados, limite_destaques=5, limite_criticos=5):
     if top_consumo:
         destaques.append(f"Os SKUs com maior consumo foram: {', '.join([sku for sku, _ in top_consumo])}.")
         for sku, v in top_consumo:
-            frase = random.choice(templates_consumo["consumo"]).format(sku=sku, consumo=v["1. Estoque consumido (ton)"]) + "."
+            frase = random.choice(templates_consumo["consumo"]).format(sku=sku, consumo=v["1. Estoque consumido (ton)"]) + ", " + random.choice(templates_consumo["frequencia_compra"]).format(frequencia=v["2. Frequência de compra (meses)"]) + ", " + random.choice(templates_consumo["n_clientes"]).format(n_clientes=v["4. Nº clientes que consomem"]) + "."
             destaques.append(frase)
 
     if top_aging:
-        destaques.append(f"\nOs SKUs com maior aging foram: {', '.join([sku for sku, _ in top_aging])}.")
+        destaques.append(f"Os SKUs com maior aging foram: {', '.join([sku for sku, _ in top_aging])}.")
         for sku, v in top_aging:
             frase = random.choice(templates_consumo["aging_estoque"]).format(aging=v["3. Aging médio do estoque (semanas)"], sku=sku) + "."
             destaques.append(frase)
 
     if top_risco:
-        destaques.append(f"\nOs SKUs em maior risco de desabastecimento incluem: {', '.join(top_risco)}.")
+        destaques.append(f"Os SKUs em maior risco de desabastecimento incluem: {', '.join(top_risco)}.")
         for sku in top_risco:
             v = dados[sku]
             frase = random.choice(templates_risco["alto_risco"]).format(sku=sku, risco=v["7. Risco de desabastecimento"])
@@ -75,6 +75,10 @@ def gerar_relatorio_texto(dados, limite_destaques=5, limite_criticos=5):
         "de estoque e demanda dos clientes."
     )
 
-    return " ".join([titulo, p1, p2, p3, p4])
+    return ([titulo, p1, p2, p3, p4])
+
+
+# def gerar_relatorio_geral(dados):
+
 
 # print(gerar_relatorio_texto(relatorio_por_sku))

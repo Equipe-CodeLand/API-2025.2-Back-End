@@ -1,3 +1,4 @@
+import json
 from fastapi import FastAPI
 from pydantic import BaseModel
 import pandas as pd
@@ -151,7 +152,7 @@ def gerar_relatorio_skus(request: RelatorioRequest):
         titulo="Relatório por SKU"
     )
 
-    return {"dados": dados, "arquivo": caminho}
+    return {"dados": dados, "arquivo": caminho, "conteudo": texto}
 
 @app.get("/relatorio/conteudo")
 def obter_conteudo(caminho: str):
@@ -159,7 +160,10 @@ def obter_conteudo(caminho: str):
         return {"conteudo": "Arquivo não encontrado"}
     
     with open(caminho, "r", encoding="utf-8") as f:
-        conteudo = f.read()
+        try:
+            conteudo = json.load(f)
+        except json.JSONDecodeError:
+            conteudo = f.read()
     
     return {"conteudo": conteudo}
 
