@@ -13,6 +13,7 @@ import {
   gerarRelatorioSku,
   listarRelatorios,
 } from "../controllers/RelatorioController";
+import { enviarRelatorioPorEmail } from "../controllers/enviarEmailController";
 
 const PLN_URL = "http://127.0.0.1:5000";
 const router = Router();
@@ -25,6 +26,7 @@ router.get("/usuario/listar", listarUsuarios);
 router.post("/relatorio/geral", authMiddleware, gerarRelatorioGeral);
 router.post("/relatorio/skus", authMiddleware, gerarRelatorioSku);
 router.get("/relatorio/listar", authMiddleware, listarRelatorios);
+router.post("/relatorio/enviar-email", authMiddleware, enviarRelatorioPorEmail);
 
 /* Rota para autenticação */
 const JWT_SECRET: string = process.env.JWT_SECRET!;
