@@ -1,15 +1,14 @@
-import { Response } from "express";
-import { AuthRequest } from "../middlewares/auth";
+import { Request, Response } from "express";
 import { enviarEmail } from "../services/emailService";
 import db from "../db/db";
 import axios from 'axios';
 
 const PLN_URL = "http://127.0.0.1:5000";
 
-export async function enviarRelatorioPorEmail(req: AuthRequest, res: Response) {
+export async function enviarRelatorioPorEmail(req: Request, res: Response) {
   try {
     const { relatorioId } = req.body;
-    const usuarioId = req.user.id;
+    const usuarioId = req.user?.id;
 
     // Buscar o relatório diretamente do banco
     const [relatorioRows]: [any[], any] = await db.query(
@@ -27,7 +26,7 @@ export async function enviarRelatorioPorEmail(req: AuthRequest, res: Response) {
 
     // Verificar se usuário pode receber emails
     const usuario = req.user;
-    if (!usuario.receberEmails) {
+    if (!usuario?.receberEmails) {
       return res.status(400).json({ 
         error: "Usuário não autorizou recebimento de emails" 
       });
@@ -39,7 +38,7 @@ export async function enviarRelatorioPorEmail(req: AuthRequest, res: Response) {
       const response = await axios.get(`${PLN_URL}/relatorio/conteudo`, {
         params: { caminho: relatorio.caminho_arquivo }
       });
-      conteudoRelatorio = response.data.conteudo;
+      conteudoRelatorio = (response.data as any).conteudo;
     } catch (error) {
       console.error('Erro ao buscar conteúdo:', error);
       conteudoRelatorio = "Erro ao carregar conteúdo do relatório";
@@ -50,7 +49,7 @@ export async function enviarRelatorioPorEmail(req: AuthRequest, res: Response) {
     const assunto = `${relatorio.titulo} - ${dataFormatada}`;
     
     const htmlContent = `
-      <h2>Olá, ${usuario.nome}!</h2>
+      <h2>Olá, ${usuario?.nome}!</h2>
       <p>Segue o relatório solicitado:</p>
       <h3>${relatorio.titulo}</h3>
       <p><strong>Data:</strong> ${dataFormatada}</p>
@@ -63,7 +62,7 @@ export async function enviarRelatorioPorEmail(req: AuthRequest, res: Response) {
     `;
 
     await enviarEmail({
-      to: usuario.email,
+      to: usuario?.email || '',
       subject: assunto,
       html: htmlContent,
       attachments: [{
@@ -72,12 +71,10 @@ export async function enviarRelatorioPorEmail(req: AuthRequest, res: Response) {
       }]
     });
 
-    return res.json({ 
+    return res.json({
       message: "Relatório enviado por email com sucesso!",
-      emailEnviado: usuario.email 
-    });
-
-  } catch (error: any) {
+      emailEnviado: usuario?.email 
+    });  } catch (error: any) {
     console.error('Erro ao enviar relatório por email:', error);
     return res.status(500).json({ 
       error: error.message || "Erro interno do servidor ao enviar email"

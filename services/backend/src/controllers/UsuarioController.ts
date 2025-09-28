@@ -19,7 +19,7 @@ export const cadastrarUsuario = async (req: Request, res: Response) => {
     const [result] = await db.execute(
       `INSERT INTO usuarios (nome, email, password, cargo, status, receberEmails)
        VALUES (?, ?, ?, ?, 'ativo', ?)`,
-      [nome, email, hash, cargo || "USUARIO", receberEmailsDB],
+      [nome, email, hash, cargo || "Funcionário", receberEmailsDB],
     );
 
     return res.status(201).json({
@@ -49,9 +49,7 @@ export const listarUsuarios = async (req: Request, res: Response) => {
 };
 
 // Exclusão de usuário
-import { AuthRequest } from "../middlewares/auth";
-
-export const deletarUsuario = async (req: AuthRequest, res: Response) => {
+export const deletarUsuario = async (req: Request, res: Response) => {
   const { id } = req.params;
 
   if (!id) {
@@ -79,7 +77,7 @@ export const deletarUsuario = async (req: AuthRequest, res: Response) => {
 };
 
 // Atualização de usuário
-export const atualizarUsuario = async (req: AuthRequest, res: Response) => {
+export const atualizarUsuario = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { nome, email, password, cargo, status, receberEmails } = req.body;
 
