@@ -1,17 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import db from "../db/db";
+import { Cargo } from "../enum/Cargo";
 
-export interface AuthRequest extends Request {
-  user: {
-    id: number;
-    email: string;
-    nome: string;
-    receberEmails: boolean;
-  };
-}
-
-export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -26,7 +18,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
 
     // Buscar dados completos do usuário
     const [userRows]: [any[], any] = await db.query(
-      "SELECT id, email, nome, receberEmails FROM usuarios WHERE id = ?",
+      "SELECT id, email, nome, receberEmails, cargo FROM usuarios WHERE id = ?",
       [decoded.id]
     );
 
@@ -34,7 +26,12 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
       return res.status(401).json({ error: "Usuário não encontrado" });
     }
 
-    req.user = userRows[0];
+    const user = userRows[0];
+    // Garantir que o cargo seja do tipo correto para o enum
+    req.user = {
+      ...user,
+      cargo: user.cargo as Cargo
+    };
     next();
   } catch (error) {
     return res.status(401).json({ error: "Token inválido" });

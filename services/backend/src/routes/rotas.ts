@@ -10,18 +10,17 @@ import {
   listarRelatorios,
 } from "../controllers/RelatorioController";
 import { enviarRelatorioPorEmail } from "../controllers/enviarEmailController";
-import { atualizarUsuario, cadastrarUsuario, deletarUsuario, listarUsuarios } from "../controllers/usuarioController";
+import { atualizarUsuario, cadastrarUsuario, deletarUsuario, listarUsuarios } from "../controllers/UsuarioController";
 import { isAdminMiddleware } from "../middlewares/isAdmin";
 
 const PLN_URL = "http://127.0.0.1:5000";
 const router = Router();
 
 /* Rotas de usuários */
-/* Rotas de usuários */
-router.post("/usuario/cadastrar",cadastrarUsuario);
-router.get("/usuario/listar", listarUsuarios);
-router.delete("/usuario/deletar/:id", authMiddleware, deletarUsuario);
-router.put("/usuario/atualizar/:id", atualizarUsuario);
+router.post("/usuario/cadastrar", authMiddleware, isAdminMiddleware, cadastrarUsuario);
+router.get("/usuario/listar", authMiddleware, isAdminMiddleware, listarUsuarios);
+router.delete("/usuario/deletar/:id", authMiddleware, isAdminMiddleware, deletarUsuario);
+router.put("/usuario/atualizar/:id", authMiddleware, isAdminMiddleware, atualizarUsuario);
 
 // rotas relatório
 router.post("/relatorio/geral", authMiddleware, gerarRelatorioGeral);
@@ -48,11 +47,12 @@ router.post("/login", async (req, res) => {
   try {
     // Busca usuário por email
     const [rows]: [any[], any] = await db.query(
-      "SELECT id, email, password FROM usuarios WHERE email = ?",
+      "SELECT id, email, password, cargo FROM usuarios WHERE email = ?",
       [email],
     );
 
     if (rows.length === 0) {
+      console.log(`Usuário não encontrado para email: ${email}`);
       return res.status(401).json({ error: "Usuário não encontrado" });
     }
 
@@ -60,6 +60,8 @@ router.post("/login", async (req, res) => {
 
     // Verifica senha
     const valid = await bcrypt.compare(password, user.password);
+    console.log(`Resultado da verificação de senha: ${valid ? "válida" : "inválida"}`);
+    
     if (!valid) {
       return res.status(401).json({ error: "Senha incorreta" });
     }
@@ -68,7 +70,7 @@ router.post("/login", async (req, res) => {
     const payload = { 
       id: user.id, 
       email: user.email,
-      role: user.role
+      cargo: user.cargo
     };
     const options: SignOptions = { expiresIn: JWT_EXPIRES_IN };
     const token = jwt.sign(payload, JWT_SECRET, options);
@@ -84,7 +86,7 @@ router.get("/relatorios/geral", async (req, res) => {
   try {
     const response = await axios.get(`${PLN_URL}/relatorio`);
     res.json(response.data);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ erro: `Erro ao buscar relatório do PLN: ${error.message}` });
   }
 });

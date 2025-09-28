@@ -6,9 +6,9 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    "outDir": "./dist",
-    "rootDir": "./src"
+    "outDir": "./services/backend/dist",
+    "rootDir": "./services/backend/src"
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["services/backend/src/**/*"],
+  "exclude": ["node_modules", "dist", "services/PLN/**/*"]
 }

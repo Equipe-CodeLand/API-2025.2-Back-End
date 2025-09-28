@@ -1,13 +1,12 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import axios from "axios";
-import { AuthRequest } from "../middlewares/auth";
 import db from "../db/db";
 
 const PLN_URL = "http://127.0.0.1:5000";
 
-export async function gerarRelatorioGeral(req: AuthRequest, res: Response) {
+export async function gerarRelatorioGeral(req: Request, res: Response) {
   try {
-    const usuarioId = req.user.id;
+    const usuarioId = req.user?.id;
     const resp = await axios.post(`${PLN_URL}/relatorio`, {
       usuario_id: usuarioId,
     });
@@ -19,9 +18,9 @@ export async function gerarRelatorioGeral(req: AuthRequest, res: Response) {
   }
 }
 
-export async function gerarRelatorioSku(req: AuthRequest, res: Response) {
+export async function gerarRelatorioSku(req: Request, res: Response) {
   try {
-    const usuarioId = req.user.id;
+    const usuarioId = req.user?.id;
     const resp = await axios.post(`${PLN_URL}/relatorio-skus`, {
       usuario_id: usuarioId,
     });
@@ -33,9 +32,9 @@ export async function gerarRelatorioSku(req: AuthRequest, res: Response) {
   }
 }
 
-export async function listarRelatorios(req: AuthRequest, res: Response) {
+export async function listarRelatorios(req: Request, res: Response) {
   try {
-    const usuarioId = req.user.id;
+    const usuarioId = req.user?.id;
 
     const [relatorios] = await db.query(
       `SELECT id, titulo, caminho_arquivo, criado_em 
@@ -47,12 +46,12 @@ export async function listarRelatorios(req: AuthRequest, res: Response) {
 
     // lê o conteudo do relatório com base no arquivo salvo do backend.
     const relatoriosComConteudo = await Promise.all(
-      relatorios.map(async (rel: any) => {
+      (relatorios as any[]).map(async (rel: any) => {
         try {
           const resp = await axios.get(`${PLN_URL}/relatorio/conteudo`, {
             params: { caminho: rel.caminho_arquivo },
           });
-          return { ...rel, conteudo: resp.data.conteudo };
+          return { ...rel, conteudo: (resp.data as any).conteudo };
         } catch {
           return { ...rel, conteudo: "Arquivo não encontrado" };
         }
