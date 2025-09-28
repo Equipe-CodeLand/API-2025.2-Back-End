@@ -27,8 +27,8 @@ export async function enviarRelatorioPorEmail(req: Request, res: Response) {
     // Verificar se usuário pode receber emails
     const usuario = req.user;
     if (!usuario?.receberEmails) {
-      return res.status(400).json({ 
-        error: "Usuário não autorizou recebimento de emails" 
+      return res.status(400).json({
+        error: "Usuário não autorizou recebimento de emails"
       });
     }
 
@@ -38,7 +38,13 @@ export async function enviarRelatorioPorEmail(req: Request, res: Response) {
       const response = await axios.get(`${PLN_URL}/relatorio/conteudo`, {
         params: { caminho: relatorio.caminho_arquivo }
       });
-      conteudoRelatorio = (response.data as any).conteudo;
+      const bruto = (response.data as any).conteudo;
+      try {
+        const jsonParsed = typeof bruto === "string" ? JSON.parse(bruto) : bruto;
+        conteudoRelatorio = formatarConteudoRelatorio(jsonParsed);
+      } catch {
+        conteudoRelatorio = formatarConteudoRelatorio(bruto);
+      }
     } catch (error) {
       console.error('Erro ao buscar conteúdo:', error);
       conteudoRelatorio = "Erro ao carregar conteúdo do relatório";
@@ -47,7 +53,7 @@ export async function enviarRelatorioPorEmail(req: Request, res: Response) {
     // Preparar e enviar email
     const dataFormatada = new Date(relatorio.criado_em).toLocaleDateString('pt-BR');
     const assunto = `${relatorio.titulo} - ${dataFormatada}`;
-    
+
     const htmlContent = `
       <h2>Olá, ${usuario?.nome}!</h2>
       <p>Segue o relatório solicitado:</p>
@@ -73,11 +79,24 @@ export async function enviarRelatorioPorEmail(req: Request, res: Response) {
 
     return res.json({
       message: "Relatório enviado por email com sucesso!",
-      emailEnviado: usuario?.email 
-    });  } catch (error: any) {
+      emailEnviado: usuario?.email
+    });
+  } catch (error: any) {
     console.error('Erro ao enviar relatório por email:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: error.message || "Erro interno do servidor ao enviar email"
     });
+  }
+}
+
+function formatarConteudoRelatorio(conteudo: any): string {
+  if (Array.isArray(conteudo)) {
+    return conteudo.join("\n\n");
+    /* } else if (conteudo && typeof conteudo === "object" && conteudo.paragrafos) {
+          return `${conteudo.titulo}\n\n${conteudo.paragrafos.join("\n\n")}`;*/
+  } else if (typeof conteudo === "string") {
+    return conteudo;
+  } else {
+    return JSON.stringify(conteudo, null, 2);
   }
 }
