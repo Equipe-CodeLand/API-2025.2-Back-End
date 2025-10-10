@@ -5,6 +5,8 @@ import db from "../db/db";
 import axios from "axios";
 import { authMiddleware } from "../middlewares/auth";
 import {
+  atualizarRelatorio,
+  excluirRelatorio,
   gerarRelatorioGeral,
   gerarRelatorioSku,
   listarRelatorios,
@@ -27,6 +29,9 @@ router.post("/relatorio/geral", authMiddleware, gerarRelatorioGeral);
 router.post("/relatorio/skus", authMiddleware, gerarRelatorioSku);
 router.get("/relatorio/listar", authMiddleware, listarRelatorios);
 router.post("/relatorio/enviar-email", authMiddleware, enviarRelatorioPorEmail);
+router.delete("/relatorio/:id", authMiddleware, excluirRelatorio);
+router.put("/relatorio/atualizar/:id", authMiddleware, atualizarRelatorio);
+
 
 /* Rota para autenticação */
 const JWT_SECRET: string = process.env.JWT_SECRET!;
