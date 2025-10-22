@@ -120,3 +120,27 @@ export const atualizarUsuario = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Erro ao atualizar usuário" });
   }
 };
+
+export async function obterUsuarioAtual(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(400).json({ error: "Usuário não autenticado." });
+    }
+
+    const [rows]: [any[], any] = await db.query(
+      "SELECT id, nome, email, cargo, receberEmails FROM usuarios WHERE id = ?",
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Usuário não encontrado." });
+    }
+
+    return res.json(rows[0]);
+  } catch (err) {
+    console.error("Erro ao obter usuário atual:", err);
+    return res.status(500).json({ error: "Erro ao obter usuário atual." });
+  }
+}

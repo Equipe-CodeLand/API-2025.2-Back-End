@@ -12,7 +12,7 @@ import {
   listarRelatorios,
 } from "../controllers/RelatorioController";
 import { enviarRelatorioPorEmail } from "../controllers/enviarEmailController";
-import { atualizarUsuario, cadastrarUsuario, deletarUsuario, listarUsuarios } from "../controllers/UsuarioController";
+import { atualizarUsuario, cadastrarUsuario, deletarUsuario, listarUsuarios, obterUsuarioAtual } from "../controllers/UsuarioController";
 import { isAdminMiddleware } from "../middlewares/isAdmin";
 
 const PLN_URL = "http://127.0.0.1:5000";
@@ -23,6 +23,8 @@ router.post("/usuario/cadastrar", authMiddleware, isAdminMiddleware, cadastrarUs
 router.get("/usuario/listar", authMiddleware, isAdminMiddleware, listarUsuarios);
 router.delete("/usuario/deletar/:id", authMiddleware, isAdminMiddleware, deletarUsuario);
 router.put("/usuario/atualizar/:id", authMiddleware, isAdminMiddleware, atualizarUsuario);
+router.get("/usuario/atual", authMiddleware, obterUsuarioAtual);
+
 
 // rotas relatório
 router.post("/relatorio/geral", authMiddleware, gerarRelatorioGeral);
