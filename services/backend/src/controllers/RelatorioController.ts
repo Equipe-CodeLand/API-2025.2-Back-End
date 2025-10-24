@@ -23,6 +23,11 @@ export async function gerarRelatorioSku(req: Request, res: Response) {
     const usuarioId = req.user?.id;
     const resp = await axios.post(`${PLN_URL}/relatorio-skus`, {
       usuario_id: usuarioId,
+      data_inicio: req.body.data_inicio,
+      data_fim: req.body.data_fim,
+      incluir_todos_skus: req.body.incluir_todos_skus,
+      skus: req.body.skus,
+      topicos: req.body.topicos
     });
 
     return res.json(resp.data);
