@@ -1,6 +1,5 @@
 from datetime import date, datetime
 import heapq
-# import random
 
 def gerar_relatorio_texto(dados, topicos=None, limite_destaques=5, data_inicio=None, data_fim=None):
     if topicos is None:
@@ -96,7 +95,7 @@ def gerar_relatorio_texto(dados, topicos=None, limite_destaques=5, data_inicio=N
         if alto_giro:
             top_skus = alto_giro[:limite_destaques]
             restante = len(alto_giro) - len(top_skus)
-            frases_critico = [f"{sku} está sem estoque, mas possui alto giro." for sku in top_skus]
+            frases_critico = [f"{sku} está sem estoque, além de possuir alto giro." for sku in top_skus]
             if restante > 0:
                 frases_critico.append(f"Entre outros {restante} SKUs de alto giro sem estoque.")
             frases.append(" ".join(frases_critico))

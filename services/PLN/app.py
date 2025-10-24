@@ -228,3 +228,6 @@ def obter_conteudo(caminho: str):
             conteudo = f.read()
     
     return {"conteudo": conteudo}
+
+#Comando para rodar o serviço
+#uvicorn app:app --reload --port 5000
