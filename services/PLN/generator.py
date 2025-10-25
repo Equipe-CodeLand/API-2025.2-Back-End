@@ -62,19 +62,20 @@ def gerar_relatorio_texto(dados, topicos=None, limite_destaques=5, data_inicio=N
 
     # 3° paragrafo: Risco de desabastecimento
     if "7. Risco de desabastecimento" in topicos:
-        alto_risco = {sku: v["7. Risco de desabastecimento"] for sku,v in dados.items() if "Alto risco" in v.get("7. Risco de desabastecimento","")}
+        alto_risco = {sku for sku,v in dados.items() if "Alto risco" in v.get("7. Risco de desabastecimento","")}
         medio_risco = [sku for sku,v in dados.items() if "Médio risco" in v.get("7. Risco de desabastecimento","")]
         baixo_risco = [sku for sku,v in dados.items() if "Baixo risco" in v.get("7. Risco de desabastecimento","")]
         sem_consumo = [sku for sku,v in dados.items() if "Sem consumo" in v.get("7. Risco de desabastecimento","")]
 
         frases_risco = []
 
-        # Alto risco: detalhar todos
+        # Detalhar todos os skus com alto risco
         if alto_risco:
-            detalhes = [f"{sku}" for sku in alto_risco.items()]
-            frases_risco.append(f"SKUs com alto risco de desabastecimento em até 4 semanas: {', '.join(detalhes)}.")
+            frases_risco.append(
+                f"Os seguintes SKUs estão em ALTO RISCO de desabastecimento: {', '.join(alto_risco)}."
+            )
         else:
-            frases_risco.append("Nenhum SKU foi classificado com alto risco de desabastecimento em até 4 semanas.")
+            frases_risco.append("Nenhum SKU foi classificado com alto risco de desabastecimento.")
 
         # Outras categorias: só quantidade
         if medio_risco:
@@ -116,7 +117,7 @@ def gerar_relatorio_texto(dados, topicos=None, limite_destaques=5, data_inicio=N
     if frases:
         paragrafos.append(" ".join(frases))
 
-    return paragrafos[:4]  #Aqui ele limita a 4 parágrafos (titulo + 4 paragrafos)
+    return paragrafos
 
 def formatar_data(data_str):
     try:
