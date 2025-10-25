@@ -1,4 +1,5 @@
 import json
+from typing import List, Optional
 from fastapi import FastAPI
 from pydantic import BaseModel
 import pandas as pd
@@ -6,17 +7,27 @@ from datetime import datetime, timedelta
 from generator import gerar_relatorio_texto
 from fastapi.middleware.cors import CORSMiddleware
 from salvarRelatorio import salvar_relatorio
-from pydantic import BaseModel
 import os
 
+# ==============================
+# Models
+# ==============================
 class RelatorioRequest(BaseModel):
     usuario_id: int
+    data_inicio: str
+    data_fim: str
+    topicos: List[str]
+    incluir_todos_skus: bool
+    skus: Optional[List[str]] = None
 
+# ==============================
+# FastAPI
+# ==============================
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"],
 )
 
 # ==============================
@@ -27,6 +38,10 @@ class RelatorioEstoque:
         # Carregamento
         self.estoque = pd.read_csv(estoque_csv, sep="|")
         self.faturamento = pd.read_csv(faturamento_csv, sep="|")
+
+        # Normalizar SKUs: garantir SKU_1, SKU_2...
+        self.estoque["SKU"] = self.estoque["SKU"].apply(lambda x: x if "SKU_" in x else f"SKU_{x.split('SKU')[-1]}")
+        self.faturamento["SKU"] = self.faturamento["SKU"].apply(lambda x: x if "SKU_" in x else f"SKU_{x.split('SKU')[-1]}")
 
         # Converter datas
         self.estoque["data"] = pd.to_datetime(self.estoque["data"], errors="coerce")
@@ -93,13 +108,27 @@ class RelatorioEstoque:
             "7. Risco de desabastecimento (geral)": self.risco_desabastecimento(self.estoque, self.faturamento),
         }
 
-    def por_sku(self):
-        resultado = {}
-        skus = self.estoque["SKU"].unique().tolist()
+    def por_sku(self, data_inicio=None, data_fim=None, skus=None):
+        df_est = self.estoque.copy()
+        df_fat = self.faturamento.copy()
 
-        for sku in skus:
-            est_sku = self.estoque[self.estoque["SKU"] == sku]
-            fat_sku = self.faturamento[self.faturamento["SKU"] == sku]
+        # Filtrar por período
+        if data_inicio:
+            df_est = df_est[df_est["data"] >= data_inicio]
+            df_fat = df_fat[df_fat["data"] >= data_inicio]
+        if data_fim:
+            df_est = df_est[df_est["data"] <= data_fim]
+            df_fat = df_fat[df_fat["data"] <= data_fim]
+
+        # Filtrar por SKUs
+        if skus:
+            df_est = df_est[df_est["SKU"].isin(skus)]
+            df_fat = df_fat[df_fat["SKU"].isin(skus)]
+
+        resultado = {}
+        for sku in df_est["SKU"].unique():
+            est_sku = df_est[df_est["SKU"] == sku]
+            fat_sku = df_fat[df_fat["SKU"] == sku]
 
             resultado[sku] = {
                 "1. Estoque consumido (ton)": self.estoque_consumido(est_sku),
@@ -111,14 +140,31 @@ class RelatorioEstoque:
                 "7. Risco de desabastecimento": self.risco_desabastecimento(est_sku, fat_sku),
             }
 
+        # Garantir que todos os SKUs pedidos aparecem mesmo que não tenham dados
+        if skus:
+            for sku in skus:
+                if sku not in resultado:
+                    resultado[sku] = {
+                        "1. Estoque consumido (ton)": 0,
+                        "2. Frequência de compra (meses)": 0,
+                        "3. Aging médio do estoque (semanas)": 0,
+                        "4. Nº clientes que consomem": 0,
+                        "5. SKUs de alto giro sem estoque": [],
+                        "6. Itens a repor": [],
+                        "7. Risco de desabastecimento": "Sem dados",
+                    }
+
         return resultado
 
+# ==============================
+# Helpers
+# ==============================
+def normalize(text):
+    return ''.join(c.lower() for c in text if c.isalnum() or c.isspace())
 
 # ==============================
-# FastAPI
+# Rotas FastAPI
 # ==============================
-
-
 @app.post("/relatorio")
 def gerar_relatorio(request: RelatorioRequest):
     rel = RelatorioEstoque()
@@ -133,15 +179,31 @@ def gerar_relatorio(request: RelatorioRequest):
         titulo="Relatório Geral"
     )
 
-    return {"dados": dados, "arquivo": caminho}
-
+    return {"dados": [dados], "arquivo": caminho}
 
 
 @app.post("/relatorio-skus")
 def gerar_relatorio_skus(request: RelatorioRequest):
     rel = RelatorioEstoque()
-    dados = rel.por_sku()
-    texto = gerar_relatorio_texto(dados)
+
+    # Ajustar SKUs para o formato correto
+    skus_formatados = None
+    if not request.incluir_todos_skus and request.skus:
+        skus_formatados = [sku.replace("SKU", "SKU_") if "SKU_" not in sku else sku for sku in request.skus]
+
+    dados = rel.por_sku(
+        data_inicio=request.data_inicio,
+        data_fim=request.data_fim,
+        skus=skus_formatados
+    )
+
+    # Filtrar tópicos
+    if request.topicos:
+        topicos_normalizados = [normalize(t) for t in request.topicos]
+        for sku in dados:
+            dados[sku] = {k: v for k, v in dados[sku].items() if any(t in normalize(k) for t in topicos_normalizados)}
+
+    texto = gerar_relatorio_texto(dados, topicos=request.topicos, data_inicio=request.data_inicio, data_fim=request.data_fim)
 
     caminho = salvar_relatorio(
         texto,
@@ -167,6 +229,5 @@ def obter_conteudo(caminho: str):
     
     return {"conteudo": conteudo}
 
-
-
+#Comando para rodar o serviço
 #uvicorn app:app --reload --port 5000

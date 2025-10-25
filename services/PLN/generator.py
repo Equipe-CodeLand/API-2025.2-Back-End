@@ -1,84 +1,126 @@
-from datetime import date
+from datetime import date, datetime
 import heapq
-from templates.pharases import templates_resumo, templates_consumo, templates_risco
-import random
 
-def gerar_relatorio_texto(dados, limite_destaques=5, limite_criticos=5):
+def gerar_relatorio_texto(dados, topicos=None, limite_destaques=5, data_inicio=None, data_fim=None):
+    if topicos is None:
+        topicos = [
+            "1. Estoque consumido (ton)",
+            "2. Frequência de compra (meses)",
+            "3. Aging médio do estoque (semanas)",
+            "4. Nº clientes distintos",
+            "5. SKUs de alto giro sem estoque",
+            "6. Itens a repor",
+            "7. Risco de desabastecimento"
+        ]
 
-    # Data e título
-    data_atual = date.today()
-    data_formatada = data_atual.strftime("%d/%m/%Y")
-    titulo = "Relatório sobre estoque e faturamento - " + data_formatada
+    paragrafos = []
 
-    # Consolidar informações gerais
-    total_consumido = sum(v.get("1. Estoque consumido (ton)",0) for v in dados.values())
-    freq_media = sum(v.get("2. Frequência de compra (meses)",0) for v in dados.values()) / len(dados)
-    aging_medio = sum(v.get("3. Aging médio do estoque (semanas)",0) for v in dados.values()) / len(dados)
+    data_inicio_fmt = formatar_data(data_inicio) if data_inicio else ""
+    data_fim_fmt = formatar_data(data_fim) if data_fim else ""
 
-    # Parágrafo 1 – visão geral
-    p1 = random.choice(templates_resumo).format(
-        total_consumo=total_consumido,
-        freq_media=freq_media,
-        aging_medio=aging_medio
-    )
+    # Título com período e data de geração
+    data_atual = date.today().strftime("%d/%m/%Y")
+    periodo = ""
+    if data_inicio_fmt and data_fim_fmt:
+        periodo = f"entre {data_inicio_fmt} e {data_fim_fmt} "
+    titulo = f"Relatório sobre estoque e faturamento da empresa, {periodo}- gerado em {data_atual}"
+    paragrafos.append(titulo)
 
-    # Parágrafo 2 – destaques
-    top_consumo = heapq.nlargest(limite_destaques, dados.items(), key=lambda x: x[1]["1. Estoque consumido (ton)"])
-    top_aging = heapq.nlargest(limite_destaques, dados.items(), key=lambda x: x[1]["3. Aging médio do estoque (semanas)"])
-    top_risco = [sku for sku, v in dados.items() if "Alto risco" in v["7. Risco de desabastecimento"]][:limite_destaques]
+    # 1° paragrafo: Resumo geral
+    if any(t in topicos for t in ["1. Estoque consumido (ton)", "2. Frequência de compra (meses)", "3. Aging médio do estoque (semanas)"]):
+        total_consumo = sum(v.get("1. Estoque consumido (ton)",0) for v in dados.values())
+        freq_media = sum(v.get("2. Frequência de compra (meses)",0) for v in dados.values()) / max(len(dados),1)
+        aging_medio = sum(v.get("3. Aging médio do estoque (semanas)",0) for v in dados.values()) / max(len(dados),1)
+        paragrafos.append(
+            f"No período analisado, os SKUs tiveram consumo total de {total_consumo:.2f} toneladas, "
+            f"frequência média de compra de {freq_media:.1f} meses e aging médio do estoque de {aging_medio:.1f} semanas."
+        )
 
-    print(top_aging)
+    # 2° paragrafo: Maiores consumos, agings e frequencia de compras
+    frases = []
 
-    destaques = []
-    if top_consumo:
-        destaques.append(f"Os SKUs com maior consumo foram: {', '.join([sku for sku, _ in top_consumo])}.")
+    if "1. Estoque consumido (ton)" in topicos:
+        top_consumo = heapq.nlargest(limite_destaques, dados.items(), key=lambda x: x[1].get("1. Estoque consumido (ton)",0))
+        frases.append("Considerando os SKUs com maior consumo no período analisado:")
         for sku, v in top_consumo:
-            frase = random.choice(templates_consumo["consumo"]).format(sku=sku, consumo=v["1. Estoque consumido (ton)"]) + ", " + random.choice(templates_consumo["frequencia_compra"]).format(frequencia=v["2. Frequência de compra (meses)"]) + ", " + random.choice(templates_consumo["n_clientes"]).format(n_clientes=v["4. Nº clientes que consomem"]) + "."
-            destaques.append(frase)
+            frases.append(f"{sku} consumiu {v.get('1. Estoque consumido (ton)',0):.2f} toneladas.")
 
-    if top_aging:
-        destaques.append(f"Os SKUs com maior aging foram: {', '.join([sku for sku, _ in top_aging])}.")
+    if "3. Aging médio do estoque (semanas)" in topicos:
+        top_aging = heapq.nlargest(limite_destaques, dados.items(), key=lambda x: x[1].get("3. Aging médio do estoque (semanas)",0))
+        frases.append("Os SKUs que registraram os maiores aging médios em seus estoque foram:")
         for sku, v in top_aging:
-            frase = random.choice(templates_consumo["aging_estoque"]).format(aging=v["3. Aging médio do estoque (semanas)"], sku=sku) + "."
-            destaques.append(frase)
+            frases.append(f"{sku} permanece em estoque há {v.get('3. Aging médio do estoque (semanas)',0):.1f} semanas.")
 
-    if top_risco:
-        destaques.append(f"Os SKUs em maior risco de desabastecimento incluem: {', '.join(top_risco)}.")
-        for sku in top_risco:
-            v = dados[sku]
-            frase = random.choice(templates_risco["alto_risco"]).format(sku=sku, risco=v["7. Risco de desabastecimento"])
-            destaques.append(frase)
+    if "2. Frequência de compra (meses)" in topicos:
+        top_freq = heapq.nlargest(limite_destaques, dados.items(), key=lambda x: x[1].get("2. Frequência de compra (meses)",float('inf')))
+        frases.append("Os SKUs com maior frequência média de compra foram:")
+        for sku, v in top_freq:
+            frases.append(f"{sku} tem frequência média de compra de {v.get('2. Frequência de compra (meses)',0):.1f} meses.")
 
-    if not destaques:
-        destaques.append("Não foram identificados SKUs de destaque relevantes no período.")
-    
-    p2 = " ".join(destaques)
+    if frases:
+        paragrafos.append(" ".join(frases))
 
-    # Parágrafo 3 – críticos
-    alto_giro = [sku for sku, v in dados.items() if v["5. SKUs de alto giro sem estoque"]]
-    repor = [sku for sku, v in dados.items() if v["6. Itens a repor"]]
+    # 3° paragrafo: Risco de desabastecimento
+    if "7. Risco de desabastecimento" in topicos:
+        alto_risco = {sku for sku,v in dados.items() if "Alto risco" in v.get("7. Risco de desabastecimento","")}
+        medio_risco = [sku for sku,v in dados.items() if "Médio risco" in v.get("7. Risco de desabastecimento","")]
+        baixo_risco = [sku for sku,v in dados.items() if "Baixo risco" in v.get("7. Risco de desabastecimento","")]
+        sem_consumo = [sku for sku,v in dados.items() if "Sem consumo" in v.get("7. Risco de desabastecimento","")]
 
-    if alto_giro:
-        p3 = f"Até {limite_criticos} SKUs de alto giro sem estoque: {', '.join(alto_giro[:limite_criticos])}."
-    else:
-        p3 = "Não foram identificados SKUs de alto giro sem estoque no período."
+        frases_risco = []
 
-    if repor:
-        p3 += f" Até {limite_criticos} itens necessitam reposição: {', '.join(repor[:limite_criticos])}."
-    else:
-        p3 += " Também não há itens pendentes de reposição."
+        # Detalhar todos os skus com alto risco
+        if alto_risco:
+            frases_risco.append(
+                f"Os seguintes SKUs estão em ALTO RISCO de desabastecimento: {', '.join(alto_risco)}."
+            )
+        else:
+            frases_risco.append("Nenhum SKU foi classificado com alto risco de desabastecimento.")
 
-    # Parágrafo 4 – conclusão
-    p4 = (
-        "De forma geral, o cenário demonstra a importância de acompanhar de perto os SKUs com risco de "
-        "desabastecimento e aqueles com baixo consumo histórico, garantindo o equilíbrio entre disponibilidade "
-        "de estoque e demanda dos clientes."
-    )
+        # Outras categorias: só quantidade
+        if medio_risco:
+            frases_risco.append(f"Também foram encontrados {len(medio_risco)} SKUs em médio risco,")
 
-    return ([titulo, p1, p2, p3, p4])
+        if baixo_risco:
+            frases_risco.append(f"além de {len(baixo_risco)} SKUs em baixo risco")
+        if sem_consumo:
+            frases_risco.append(f"e {len(sem_consumo)} SKUs sem consumo registrado.")
 
+        if frases_risco:
+            paragrafos.append(" ".join(frases_risco))
 
-# def gerar_relatorio_geral(dados):
+    # 4° paragrafo: Alto giro / itens a repor
+    frases = []
+    if "5. SKUs de alto giro sem estoque" in topicos:
+        alto_giro = [sku for sku,v in dados.items() if v.get("5. SKUs de alto giro sem estoque")]
+        if alto_giro:
+            top_skus = alto_giro[:limite_destaques]
+            restante = len(alto_giro) - len(top_skus)
+            frases_critico = [f"{sku} está sem estoque, além de possuir alto giro." for sku in top_skus]
+            if restante > 0:
+                frases_critico.append(f"Entre outros {restante} SKUs de alto giro sem estoque.")
+            frases.append(" ".join(frases_critico))
+        else:
+            frases.append("Não foram identificados SKUs de alto giro sem estoque.")
 
+    if "6. Itens a repor" in topicos:
+        repor = [sku for sku,v in dados.items() if v.get("6. Itens a repor")]
+        if repor:
+            top_skus = repor[:limite_destaques]
+            restante = len(repor) - len(top_skus)
+            frases_repor = [f"{sku} necessita reposição." for sku in top_skus]
+            if restante > 0:
+                frases_repor.append(f"Entre outros {restante} SKUs a repor.")
+            frases.append(" ".join(frases_repor))
+        else:
+            frases.append("Não há itens pendentes de reposição.")
+    if frases:
+        paragrafos.append(" ".join(frases))
 
-# print(gerar_relatorio_texto(relatorio_por_sku))
+    return paragrafos
+
+def formatar_data(data_str):
+    try:
+        return datetime.strptime(data_str, "%Y-%m-%d").strftime("%d/%m/%Y")
+    except:
+        return data_str

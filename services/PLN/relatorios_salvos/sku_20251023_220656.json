@@ -1,0 +1,6 @@
+[
+  "Relatório sobre estoque e faturamento da empresa, entre 01/01/2025 e 23/10/2025 - gerado em 23/10/2025",
+  "No período analisado, os SKUs tiveram consumo total de 262.47 toneladas, frequência média de compra de 3.6 meses e aging médio do estoque de 11.3 semanas.",
+  "Considerando os SKUs com maior consumo no período analisado: SKU_88 consumiu 106.70 toneladas. SKU_1 consumiu 93.09 toneladas. SKU_50 consumiu 21.57 toneladas. SKU_100 consumiu 10.23 toneladas. SKU_12 consumiu 9.33 toneladas. Os SKUs que registraram os maiores aging médios em seus estoque foram: SKU_20 permanece em estoque há 33.2 semanas. SKU_1 permanece em estoque há 30.5 semanas. SKU_12 permanece em estoque há 29.6 semanas. SKU_50 permanece em estoque há 8.1 semanas. SKU_88 permanece em estoque há 5.9 semanas. Os SKUs com maior frequência média de compra foram: SKU_11 tem frequência média de compra de 7.0 meses. SKU_88 tem frequência média de compra de 7.0 meses. SKU_100 tem frequência média de compra de 7.0 meses. SKU_40 tem frequência média de compra de 5.0 meses. SKU_30 tem frequência média de compra de 4.0 meses.",
+  "Nenhum SKU foi classificado com alto risco de desabastecimento em até 4 semanas. Também foram encontrados 4 SKUs em médio risco, além de 3 SKUs em baixo risco e 3 SKUs sem consumo registrado."
+]
