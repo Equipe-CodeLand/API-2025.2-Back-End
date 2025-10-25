@@ -12,6 +12,7 @@ import {
 import { enviarRelatorioPorEmail } from "../controllers/enviarEmailController";
 import { atualizarUsuario, cadastrarUsuario, deletarUsuario, listarUsuarios } from "../controllers/UsuarioController";
 import { isAdminMiddleware } from "../middlewares/isAdmin";
+import { forgotPassword, resetPassword } from "../controllers/PasswordController";
 
 const PLN_URL = "http://127.0.0.1:5000";
 const router = Router();
@@ -81,6 +82,10 @@ router.post("/login", async (req, res) => {
     return res.status(500).json({ error: "Erro no servidor" });
   }
 });
+
+// Rotas para recuperação de senha (sem autenticação)
+router.post("/auth/forgot-password", forgotPassword);
+router.post("/auth/reset-password", resetPassword);
 
 router.get("/relatorios/geral", async (req, res) => {
   try {
