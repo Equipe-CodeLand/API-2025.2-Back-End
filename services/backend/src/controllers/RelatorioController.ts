@@ -69,3 +69,68 @@ export async function listarRelatorios(req: Request, res: Response) {
     return res.status(500).json({ error: "Erro ao listar relatórios" });
   }
 }
+
+export async function atualizarRelatorio(req: Request, res: Response) {
+  const { id } = req.params;
+  const { titulo } = req.body;
+
+  if (!titulo || titulo.trim() === "") {
+    return res.status(400).json({ error: "O título é obrigatório." });
+  }
+
+  try {
+    const [rows] = await db.query("SELECT * FROM relatorio WHERE id = ?", [id]);
+    if ((rows as any[]).length === 0) {
+      return res.status(404).json({ error: "Relatório não encontrado." });
+    }
+
+    await db.execute("UPDATE relatorio SET titulo = ? WHERE id = ?", [
+      titulo,
+      id,
+    ]);
+    return res
+      .status(200)
+      .json({ message: "Relatório atualizado com sucesso." });
+  } catch (err) {
+    console.error("Erro ao atualizar relatório:", err);
+    return res.status(500).json({ error: "Erro ao atualizar relatório." });
+  }
+}
+
+
+export async function excluirRelatorio(req: Request, res: Response) {
+  try {
+    const usuarioId = req.user?.id;
+    const relatorioId = req.params.id;
+    
+    const [rows]: any = await db.query(
+      "SELECT caminho_arquivo FROM relatorio WHERE id = ? AND usuario_id = ?",
+      [relatorioId, usuarioId],
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ error: "Relatório não encontrado" });
+    }
+
+    const caminhoArquivo = rows[0].caminho_arquivo;
+
+    await db.query("DELETE FROM relatorio WHERE id = ? AND usuario_id = ?", [
+      relatorioId,
+      usuarioId,
+    ]);
+
+    // notifica o microserviço PLN para apagar o arquivo
+    try {
+      await axios.delete(`${PLN_URL}/relatorio/remover`, {
+        params: { caminho: caminhoArquivo },
+      });
+    } catch {
+      console.warn("Aviso: não foi possível remover o arquivo do PLN.");
+    }
+
+    return res.json({ message: "Relatório excluído com sucesso" });
+  } catch (err: any) {
+    console.error(err);
+    return res.status(500).json({ error: "Erro ao excluir relatório" });
+  }
+}
