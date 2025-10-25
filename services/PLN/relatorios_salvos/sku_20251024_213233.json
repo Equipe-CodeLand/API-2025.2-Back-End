@@ -1,0 +1,5 @@
+[
+  "Relatório sobre estoque e faturamento da empresa, entre 11/06/2024 e 10/10/2025 - gerado em 24/10/2025",
+  "Os seguintes SKUs estão em ALTO RISCO de desabastecimento: SKU_11, SKU_5, SKU_76, SKU_257, SKU_196, SKU_136, SKU_235, SKU_242, SKU_35, SKU_260, SKU_82, SKU_124, SKU_41, SKU_87, SKU_152, SKU_256, SKU_63, SKU_18, SKU_126, SKU_151, SKU_9, SKU_207, SKU_203, SKU_86, SKU_265, SKU_28, SKU_137, SKU_193, SKU_3, SKU_89, SKU_165, SKU_274, SKU_164, SKU_64, SKU_62, SKU_25, SKU_135, SKU_80, SKU_30. Também foram encontrados 69 SKUs em médio risco, além de 73 SKUs em baixo risco e 114 SKUs sem consumo registrado.",
+  "Não foram identificados SKUs de alto giro sem estoque. Não há itens pendentes de reposição."
+]

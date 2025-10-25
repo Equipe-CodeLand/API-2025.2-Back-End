@@ -7,11 +7,15 @@ class RelatorioEstoque:
         self.estoque = pd.read_csv(estoque_csv, sep="|")
         self.faturamento = pd.read_csv(faturamento_csv, sep="|")
 
+        # Normalização de SKUs (adição da main - Felipe)
+        self.estoque["SKU"] = self.estoque["SKU"].apply(lambda x: x if "SKU_" in x else f"SKU_{x.split('SKU')[-1]}")
+        self.faturamento["SKU"] = self.faturamento["SKU"].apply(lambda x: x if "SKU_" in x else f"SKU_{x.split('SKU')[-1]}")
+
         # Converter datas
         self.estoque["data"] = pd.to_datetime(self.estoque["data"], errors="coerce")
         self.faturamento["data"] = pd.to_datetime(self.faturamento["data"], errors="coerce")
 
-        # Janela de tempo em dias
+        # Janela de tempo em dias (seu padrão; main usa semanas=52, mas convertemos para dias=365 para alinhar)
         hoje = max(self.estoque["data"].max(), self.faturamento["data"].max())
         inicio = hoje - timedelta(days=dias)
 
@@ -19,7 +23,7 @@ class RelatorioEstoque:
         self.faturamento = self.faturamento[self.faturamento["data"] >= inicio]
 
     # ==============================
-    # Funções de métricas (sem mudanças)
+    # Funções de métricas (suas, sem mudanças - André)
     # ==============================
     def estoque_consumido(self, df):
         return round(df["es_totalestoque"].sum(), 2)
@@ -50,7 +54,7 @@ class RelatorioEstoque:
         if consumo_total == 0:
             return "Sem consumo histórico"
 
-        # Corrige: _get_dias() retorna float (número de dias)
+        # Corrige: _get_dias() retorna float (número de dias) - sua correção (André)
         num_dias = self._get_dias()
         if num_dias <= 0:
             return "Período inválido ou sem dados"
@@ -68,7 +72,7 @@ class RelatorioEstoque:
 
     def _get_dias(self):
         """
-        Retorna o número de dias no período como float (corrigido para evitar Timedelta).
+        Retorna o número de dias no período como float (corrigido para evitar Timedelta) - sua correção (André)
         """
         if self.estoque.empty:
             return 365.0  # Default
@@ -76,7 +80,7 @@ class RelatorioEstoque:
         return diff.days if pd.notna(diff) else 365.0  # Usa .days para converter Timedelta para int
 
     # ==============================
-    # Relatórios (sem mudanças)
+    # Relatórios (suas, com adições da main para filtros - André + Felipe)
     # ==============================
     def geral(self):
         return {
@@ -89,16 +93,32 @@ class RelatorioEstoque:
             "7. Risco de desabastecimento (geral)": self.risco_desabastecimento(self.estoque, self.faturamento),
         }
 
-    def por_sku(self, atributos=None):
+    def por_sku(self, data_inicio=None, data_fim=None, skus=None, atributos=None):
         """
-        Retorna métricas por SKU, filtrando só atributos solicitados se passado.
+        Retorna métricas por SKU, com filtros de data/SKU (da main - Felipe) e atributos (sua - André).
         """
-        resultado = {}
-        skus = self.estoque["SKU"].unique().tolist()
+        df_est = self.estoque.copy()
+        df_fat = self.faturamento.copy()
 
-        for sku in skus:
-            est_sku = self.estoque[self.estoque["SKU"] == sku]
-            fat_sku = self.faturamento[self.faturamento["SKU"] == sku]
+        # Filtros de data (adição da main - Felipe)
+        if data_inicio:
+            df_est = df_est[df_est["data"] >= pd.to_datetime(data_inicio)]
+            df_fat = df_fat[df_fat["data"] >= pd.to_datetime(data_inicio)]
+        if data_fim:
+            df_est = df_est[df_est["data"] <= pd.to_datetime(data_fim)]
+            df_fat = df_fat[df_fat["data"] <= pd.to_datetime(data_fim)]
+
+        # Filtro por SKUs (adição da main - Felipe)
+        if skus:
+            df_est = df_est[df_est["SKU"].isin(skus)]
+            df_fat = df_fat[df_fat["SKU"].isin(skus)]
+
+        resultado = {}
+        skus_unicos = df_est["SKU"].unique().tolist()
+
+        for sku in skus_unicos:
+            est_sku = df_est[df_est["SKU"] == sku]
+            fat_sku = df_fat[df_fat["SKU"] == sku]
 
             metricas_sku = {
                 "1. Estoque consumido (ton)": self.estoque_consumido(est_sku),
@@ -110,10 +130,24 @@ class RelatorioEstoque:
                 "7. Risco de desabastecimento": self.risco_desabastecimento(est_sku, fat_sku),
             }
 
-            # Filtra atributos se solicitado
+            # Filtra atributos se solicitado (sua feature - André)
             if atributos:
                 resultado[sku] = {k: v for k, v in metricas_sku.items() if any(attr in k.lower() for attr in atributos)}
             else:
                 resultado[sku] = metricas_sku
+
+        # Garantir que todos os SKUs pedidos aparecem mesmo que não tenham dados (da main - Felipe)
+        if skus:
+            for sku in skus:
+                if sku not in resultado:
+                    resultado[sku] = {
+                        "1. Estoque consumido (ton)": 0,
+                        "2. Frequência de compra (meses)": 0,
+                        "3. Aging médio do estoque (semanas)": 0,
+                        "4. Nº clientes que consomem": 0,
+                        "5. SKUs de alto giro sem estoque": [],
+                        "6. Itens a repor": [],
+                        "7. Risco de desabastecimento": "Sem dados",
+                    }
 
         return resultado

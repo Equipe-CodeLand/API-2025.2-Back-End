@@ -1,12 +1,146 @@
 import { Request, Response } from "express";
-import { UsuarioModel } from "../models/Usuario";
+import db from "../db/db";
+import bcrypt from "bcryptjs";
 
-export const cadastrarUsuario = (req: Request, res: Response) => {
-  const { nome } = req.body;
-  const novoUsuario = UsuarioModel.criar(nome);
-  res.status(201).json(novoUsuario);
+export const cadastrarUsuario = async (req: Request, res: Response) => {
+  const { nome, email, password, cargo, receberEmails } = req.body;
+
+  if (!nome || !email || !password) {
+    return res
+      .status(400)
+      .json({ error: "Nome, email e senha são obrigatórios" });
+  }
+
+  try {
+    const hash = await bcrypt.hash(password, 10);
+
+    const receberEmailsDB = receberEmails ? 1 : 0;
+
+    const [result] = await db.execute(
+      `INSERT INTO usuarios (nome, email, password, cargo, status, receberEmails)
+       VALUES (?, ?, ?, ?, 'ativo', ?)`,
+      [nome, email, hash, cargo || "Funcionário", receberEmailsDB],
+    );
+
+    return res.status(201).json({
+      message: "Usuário cadastrado com sucesso",
+      id: (result as any).insertId,
+    });
+  } catch (error: any) {
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(400).json({ error: "Email já cadastrado" });
+    }
+    console.error("Erro ao cadastrar usuário:", error);
+    return res.status(500).json({ error: "Erro ao cadastrar usuário" });
+  }
 };
 
-export const listarUsuarios = (req: Request, res: Response) => {
-  res.json(UsuarioModel.listar());
+// Listagem de usuários
+export const listarUsuarios = async (req: Request, res: Response) => {
+  try {
+    const [rows] = await db.query(
+      "SELECT id, nome, email, cargo, status, password, receberEmails FROM usuarios",
+    );
+    return res.json(rows);
+  } catch (error) {
+    console.error("Erro ao listar usuários:", error);
+    return res.status(500).json({ error: "Erro ao buscar usuários" });
+  }
 };
+
+// Exclusão de usuário
+export const deletarUsuario = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ error: "ID do usuário é obrigatório" });
+  }
+
+  try {
+    if (req.user && req.user.id === parseInt(id, 10)) {
+      return res.status(403).json({ error: "Você não pode excluir sua própria conta" });
+    }
+
+    const [rows] = await db.query("SELECT id FROM usuarios WHERE id = ?", [id]);
+
+    if ((rows as any[]).length === 0) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    await db.execute("DELETE FROM usuarios WHERE id = ?", [id]);
+
+    return res.status(200).json({ message: "Usuário excluído com sucesso" });
+  } catch (error) {
+    console.error("Erro ao excluir usuário:", error);
+    return res.status(500).json({ error: "Erro ao excluir usuário" });
+  }
+};
+
+// Atualização de usuário
+export const atualizarUsuario = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { nome, email, password, cargo, status, receberEmails } = req.body;
+
+  if (!id) {
+    return res.status(400).json({ error: "ID do usuário é obrigatório" });
+  }
+
+  try {
+    const [rows] = await db.query("SELECT * FROM usuarios WHERE id = ?", [id]);
+
+    if ((rows as any[]).length === 0) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    const usuarioAtual = (rows as any[])[0];
+
+    let hashPassword = usuarioAtual.password;
+    if (password) {
+      hashPassword = await bcrypt.hash(password, 10);
+    }
+
+    await db.execute(
+      `UPDATE usuarios
+       SET nome = ?, email = ?, password = ?, cargo = ?, status = ?, receberEmails = ?
+       WHERE id = ?`,
+      [
+        nome || usuarioAtual.nome,
+        email || usuarioAtual.email,
+        hashPassword,
+        cargo || usuarioAtual.cargo,
+        status || usuarioAtual.status,
+        receberEmails !== undefined ? receberEmails : usuarioAtual.receberEmails,
+        id,
+      ]
+    );
+
+    return res.status(200).json({ message: "Usuário atualizado com sucesso" });
+  } catch (error) {
+    console.error("Erro ao atualizar usuário:", error);
+    return res.status(500).json({ error: "Erro ao atualizar usuário" });
+  }
+};
+
+export async function obterUsuarioAtual(req: any, res: any) {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(400).json({ error: "Usuário não autenticado." });
+    }
+
+    const [rows]: [any[], any] = await db.query(
+      "SELECT id, nome, email, cargo, receberEmails FROM usuarios WHERE id = ?",
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Usuário não encontrado." });
+    }
+
+    return res.json(rows[0]);
+  } catch (err) {
+    console.error("Erro ao obter usuário atual:", err);
+    return res.status(500).json({ error: "Erro ao obter usuário atual." });
+  }
+}
