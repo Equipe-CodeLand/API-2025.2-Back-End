@@ -15,6 +15,7 @@ import { enviarRelatorioPorEmail } from "../controllers/enviarEmailController";
 import { atualizarUsuario, cadastrarUsuario, deletarUsuario, listarUsuarios, obterUsuarioAtual } from "../controllers/UsuarioController";
 import { isAdminMiddleware } from "../middlewares/isAdmin";
 import { forgotPassword, resetPassword } from "../controllers/PasswordController";
+import { enviarMensagem } from "../controllers/chatController";
 
 const PLN_URL = "http://127.0.0.1:5000";
 const router = Router();
@@ -34,6 +35,9 @@ router.get("/relatorio/listar", authMiddleware, listarRelatorios);
 router.post("/relatorio/enviar-email", authMiddleware, enviarRelatorioPorEmail);
 router.delete("/relatorio/:id", authMiddleware, excluirRelatorio);
 router.put("/relatorio/atualizar/:id", authMiddleware, atualizarRelatorio);
+
+
+router.post("/chat", authMiddleware, enviarMensagem);
 
 
 /* Rota para autenticação */
