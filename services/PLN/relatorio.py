@@ -74,9 +74,9 @@ class RelatorioEstoque:
         """
         Retorna o número de dias no período como float (corrigido para evitar Timedelta) - sua correção (André)
         """
-        if self.estoque.empty:
+        if self.faturamento.empty:
             return 365.0  # Default
-        diff = (self.estoque["data"].max() - self.estoque["data"].min())
+        diff = (self.faturamento["data"].max() - self.faturamento["data"].min())
         return diff.days if pd.notna(diff) else 365.0  # Usa .days para converter Timedelta para int
 
     # ==============================
