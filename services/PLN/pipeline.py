@@ -32,22 +32,22 @@ class PipelinePLN:
 
         rel = None  # Inicializa como None
 
-        if intencao == "gerar_relatorio":
-            # Cria rel só aqui, com handling de None para dias
-            dias = params.get("periodo_dias") or 365  # Usa 365 se None ou ausente
-            rel = RelatorioEstoque(dias=dias)
-            dados = rel.por_sku(atributos=params.get("atributos", None))
+        # if intencao == "gerar_relatorio":
+        #     # Cria rel só aqui, com handling de None para dias
+        #     dias = params.get("periodo_dias") or 365  # Usa 365 se None ou ausente
+        #     rel = RelatorioEstoque(dias=dias)
+        #     dados = rel.por_sku(atributos=params.get("atributos", None))
 
-            # Limitar SKUs
-            if params["limite_skus"]:
-                dados = dict(list(dados.items())[:params["limite_skus"]])
+        #     # Limitar SKUs
+        #     if params["limite_skus"]:
+        #         dados = dict(list(dados.items())[:params["limite_skus"]])
 
-            resposta = gerar_relatorio_texto(dados, atributos=params.get("atributos", None))
-            # Garantia de formatação aprimorada: Quebras de parágrafo com \n\n após frases completas
-            resposta = re.sub(r'([.!?])\s+', r'\1\n\n', resposta)
-            resposta = resposta.strip()
+        #     resposta = gerar_relatorio_texto(dados, atributos=params.get("atributos", None))
+        #     # Garantia de formatação aprimorada: Quebras de parágrafo com \n\n após frases completas
+        #     resposta = re.sub(r'([.!?])\s+', r'\1\n\n', resposta)
+        #     resposta = resposta.strip()
 
-        elif intencao == "consulta":
+        if intencao == "consulta":
             # Cria rel só aqui
             dias = params.get("periodo_dias") or 365
             rel = RelatorioEstoque(dias=dias)
@@ -60,20 +60,19 @@ class PipelinePLN:
                 else:
                     valor_str = str(valor) if valor is not None else "N/A"
                 resposta += f"• {chave}: {valor_str}\n"
-            resposta += "\n\nPrecisa de mais detalhes ou um relatório completo? 😊"
+            resposta += "\n\nPrecisa de mais detalhes? 😊"
 
         elif intencao == "saudacao":
-            resposta = "Oi! 👋 Tudo bem sim, e você?\n\nEstou aqui para ajudar com relatórios de estoque e faturamento. O que você quer saber hoje?\n\nEx.: 'Qual o consumo total?' ou 'Gera relatório dos 5 SKUs de risco'."
+            resposta = "Oi! 👋 Tudo bem sim, e você?\n\nEstou aqui para ajudar com relatórios de estoque e faturamento. O que você quer saber hoje?\n\nEx.: 'Qual o consumo total?'."
 
         elif intencao == "despedida":
-            resposta = "Tchau! 👋 Qualquer coisa sobre relatórios, é só voltar.\n\nTenha um ótimo dia!"
+            resposta = "Tchau! 👋 Qualquer coisa, é só voltar.\n\nTenha um ótimo dia!"
 
         else:
             # Fallback para "outro" ou ambiguidades: Tenta responder baseado em keywords de relatórios
             resposta = self._handle_geral(texto, params)
             if not resposta:
-                resposta = "Hmm, não peguei direito essa. 😅 Pode reformular?\n\nFalo sobre estoque, consumo, aging, riscos...\n\nEx.: 'Me explica o que é aging no relatório' ou 'Gera um resumo geral'."
-
+                resposta = "Hmm, não peguei direito essa. 😅 Pode reformular?\n\nFalo sobre estoque, consumo, aging, riscos...\n\nEx.: 'Me explica o que é aging no relatório'."
         return resposta
 
     def _detectar_explicacao(self, texto):

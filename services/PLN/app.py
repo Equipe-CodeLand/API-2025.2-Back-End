@@ -5,19 +5,18 @@ from pydantic import BaseModel
 import pandas as pd
 from datetime import datetime, timedelta
 from generator import gerar_relatorio_texto
-from pipeline import PipelinePLN  # Sua importação (André)
-from relatorio import RelatorioEstoque  # Sua classe modular (André)
-from fastapi.middleware.cors import CORSMiddleware  # Da main (Felipe)
-from salvarRelatorio import salvar_relatorio  # Da main (Felipe) - assumindo que existe
-import os  # Da main (Felipe)
+from pipeline import PipelinePLN
+from relatorio import RelatorioEstoque
+from fastapi.middleware.cors import CORSMiddleware 
+from salvarRelatorio import salvar_relatorio 
+import os
 
-# ==============================
-# Models (da main, com sua Consulta - Felipe + André)
-# ==============================
-class Consulta(BaseModel):  # Sua (André)
+# Models
+class Consulta(BaseModel):
+    usuario_id: int
     texto: str
 
-class RelatorioRequest(BaseModel):  # Da main (Felipe)
+class RelatorioRequest(BaseModel):
     usuario_id: int
     data_inicio: str
     data_fim: str

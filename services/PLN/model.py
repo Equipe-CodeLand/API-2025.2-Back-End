@@ -22,7 +22,7 @@ class IntentClassifier:
         print(f"🎯 Intenção detectada: {intencao_predita} (confiança: {confianca:.2f})")
         
         # Threshold: Se baixa confiança, retorna "outro" para fallback
-        if confianca < 0.6:
+        if confianca < 0.5:
             intencao_predita = "outro"
             print(f"⚠️ Confiança baixa, usando fallback: {intencao_predita}")
 
