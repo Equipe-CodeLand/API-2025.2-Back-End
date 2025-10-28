@@ -15,26 +15,41 @@ export async function gerarRelatorioGeral(req: Request, res: Response) {
     // retorna normalmente ao caller
     const retorno = resp.data;
 
-    // Tenta enviar email se o usuário permitiu receber emails
+    // Envia para TODOS os usuários que tenham receberEmails = 1
     (async () => {
       try {
-        if (req.user?.receberEmails) {
-          const caminho = retorno.arquivo;
-          // obter o conteúdo salvo (PLN)
-          const conteudoResp = await axios.get(`${PLN_URL}/relatorio/conteudo`, { params: { caminho } });
-          const conteudoFormatado = formatContentForEmail(conteudoResp.data?.conteudo ?? retorno.dados);
-          const assunto = `Relatório Geral - ${new Date().toLocaleDateString("pt-BR")}`;
-          const html = `<h3>Olá, ${req.user?.nome}</h3><p>Segue em anexo o Relatório Geral.</p><pre style="white-space:pre-wrap">${conteudoFormatado}</pre>`;
-          await enviarEmail({
-            to: req.user.email,
-            subject: assunto,
-            html,
-            attachments: [{
-              filename: `relatorio_geral_${new Date().toISOString().slice(0,10)}.txt`,
-              content: conteudoFormatado
-            }]
-          });
-          console.log("Email automático de Relatório Geral enviado para:", req.user.email);
+        const [usuarios]: any = await db.query(
+          "SELECT id, nome, email FROM usuarios WHERE receberEmails = 1"
+        );
+
+        if (!usuarios || usuarios.length === 0) {
+          console.log("Nenhum usuário configurado para receber e-mails.");
+          return;
+        }
+
+        const caminho = retorno.arquivo;
+        const conteudoResp = await axios.get(`${PLN_URL}/relatorio/conteudo`, { params: { caminho } });
+        const conteudoFormatado = formatContentForEmail(conteudoResp.data?.conteudo ?? retorno.dados);
+        const assunto = `Relatório Geral - ${new Date().toLocaleDateString("pt-BR")}`;
+
+        for (const u of usuarios) {
+          (async (usuario) => {
+            try {
+              const html = `<h3>Olá, ${usuario.nome}</h3><p>Segue em anexo o Relatório Geral.</p><pre style="white-space:pre-wrap">${conteudoFormatado}</pre>`;
+              await enviarEmail({
+                to: usuario.email,
+                subject: assunto,
+                html,
+                attachments: [{
+                  filename: `relatorio_geral_${new Date().toISOString().slice(0,10)}.txt`,
+                  content: conteudoFormatado
+                }]
+              });
+              console.log("Email automático enviado para:", usuario.email);
+            } catch (e) {
+              console.error("Falha ao enviar email para:", usuario.email, e);
+            }
+          })(u);
         }
       } catch (e) {
         console.error("Falha no envio automático de email (Relatório Geral):", e);
@@ -62,25 +77,41 @@ export async function gerarRelatorioSku(req: Request, res: Response) {
 
     const retorno = resp.data;
 
+    // Envia para TODOS os usuários que tenham receberEmails = 1
     (async () => {
       try {
-        if (req.user?.receberEmails) {
-          const caminho = retorno.arquivo;
-          const conteudoResp = await axios.get(`${PLN_URL}/relatorio/conteudo`, { params: { caminho } });
-          // PLN pode devolver array (texto em parágrafos) ou já texto
-          const conteudoFormatado = formatContentForEmail(conteudoResp.data?.conteudo ?? retorno.conteudo);
-          const assunto = `Relatório por SKU - ${new Date().toLocaleDateString("pt-BR")}`;
-          const html = `<h3>Olá, ${req.user?.nome}</h3><p>Segue em anexo o Relatório por SKU.</p><pre style="white-space:pre-wrap">${conteudoFormatado}</pre>`;
-          await enviarEmail({
-            to: req.user.email,
-            subject: assunto,
-            html,
-            attachments: [{
-              filename: `relatorio_sku_${new Date().toISOString().slice(0,10)}.txt`,
-              content: conteudoFormatado
-            }]
-          });
-          console.log("Email automático de Relatório por SKU enviado para:", req.user.email);
+        const [usuarios]: any = await db.query(
+          "SELECT id, nome, email FROM usuarios WHERE receberEmails = 1"
+        );
+
+        if (!usuarios || usuarios.length === 0) {
+          console.log("Nenhum usuário configurado para receber e-mails.");
+          return;
+        }
+
+        const caminho = retorno.arquivo;
+        const conteudoResp = await axios.get(`${PLN_URL}/relatorio/conteudo`, { params: { caminho } });
+        const conteudoFormatado = formatContentForEmail(conteudoResp.data?.conteudo ?? retorno.conteudo);
+        const assunto = `Relatório por SKU - ${new Date().toLocaleDateString("pt-BR")}`;
+
+        for (const u of usuarios) {
+          (async (usuario) => {
+            try {
+              const html = `<h3>Olá, ${usuario.nome}</h3><p>Segue em anexo o Relatório por SKU.</p><pre style="white-space:pre-wrap">${conteudoFormatado}</pre>`;
+              await enviarEmail({
+                to: usuario.email,
+                subject: assunto,
+                html,
+                attachments: [{
+                  filename: `relatorio_sku_${new Date().toISOString().slice(0,10)}.txt`,
+                  content: conteudoFormatado
+                }]
+              });
+              console.log("Email automático enviado para:", usuario.email);
+            } catch (e) {
+              console.error("Falha ao enviar email para:", usuario.email, e);
+            }
+          })(u);
         }
       } catch (e) {
         console.error("Falha no envio automático de email (Relatório SKU):", e);
