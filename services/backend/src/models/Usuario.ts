@@ -1,5 +1,5 @@
 import { DataTypes, Model } from "sequelize";
-import { sequelize } from "../db/db";
+import sequelize from "../db/db";
 import { Status } from "../enum/Status";
 
 export class Usuario extends Model {
