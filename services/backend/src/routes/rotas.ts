@@ -15,13 +15,13 @@ import { enviarRelatorioPorEmail } from "../controllers/enviarEmailController";
 import { atualizarUsuario, cadastrarUsuario, deletarUsuario, listarUsuarios, obterUsuarioAtual } from "../controllers/UsuarioController";
 import { isAdminMiddleware } from "../middlewares/isAdmin";
 import { forgotPassword, resetPassword } from "../controllers/PasswordController";
-import { enviarMensagem } from "../controllers/chatController";
+import chatController from "../controllers/chatController";
 
 const PLN_URL = "http://127.0.0.1:5000";
 const router = Router();
 
 /* Rotas de usuários */
-router.post("/usuario/cadastrar", authMiddleware, isAdminMiddleware, cadastrarUsuario);
+router.post("/usuario/cadastrar", cadastrarUsuario);
 router.get("/usuario/listar", authMiddleware, isAdminMiddleware, listarUsuarios);
 router.delete("/usuario/deletar/:id", authMiddleware, isAdminMiddleware, deletarUsuario);
 router.put("/usuario/atualizar/:id", authMiddleware, isAdminMiddleware, atualizarUsuario);
@@ -37,7 +37,8 @@ router.delete("/relatorio/:id", authMiddleware, excluirRelatorio);
 router.put("/relatorio/atualizar/:id", authMiddleware, atualizarRelatorio);
 
 
-router.post("/chat", authMiddleware, enviarMensagem);
+router.post("/chat", authMiddleware, chatController.enviarMensagem);
+router.post("/chat/criar", authMiddleware, chatController.criarChat);
 
 
 /* Rota para autenticação */
