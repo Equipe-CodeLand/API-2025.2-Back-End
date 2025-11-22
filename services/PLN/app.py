@@ -9,6 +9,7 @@ from pipeline import PipelinePLN
 from relatorio import RelatorioEstoque
 from fastapi.middleware.cors import CORSMiddleware 
 from salvarRelatorio import salvar_relatorio 
+from assertividade import RelatorioAssertividade
 import os
 
 # Models
@@ -118,6 +119,61 @@ def gerar_relatorio_skus(request: RelatorioRequest):
     )
 
     return {"dados": dados, "arquivo": caminho, "conteudo": texto}
+
+@app.post("/relatorio-skus-assertividade")
+def gerar_assertividade_skus(request: RelatorioRequest):
+    """
+    Gera relatório de assertividade dos SKUs
+    Calcula métricas de confiabilidade e qualidade dos dados
+    Salva o relatório como arquivo e retorna resumo + arquivo
+    """
+    try:
+        print(f"Iniciando assertividade com: {request}")
+        rel = RelatorioEstoque()
+        
+        # Ajustar SKUs para o formato correto
+        skus_formatados = None
+        if not request.incluir_todos_skus and request.skus:
+            skus_formatados = [sku.replace("SKU", "SKU_") if "SKU_" not in sku else sku for sku in request.skus]
+        
+        # Gerar dados dos SKUs
+        print(f"Gerando dados por SKU...")
+        dados = rel.por_sku(
+            data_inicio=request.data_inicio,
+            data_fim=request.data_fim,
+            skus=skus_formatados
+        )
+        print(f"Dados gerados: {len(dados)} SKUs")
+        
+        # Calcular assertividade
+        print(f"Calculando assertividade...")
+        assertividade = RelatorioAssertividade(dados)
+        relatorio_assertividade = assertividade.gerar_relatorio()
+        
+        # Salvar relatório como arquivo
+        print(f"Salvando relatório em arquivo...")
+        caminho = salvar_relatorio(
+            relatorio_assertividade,
+            tipo="assertividade",
+            como_json=True,
+            chat_id=1,
+            usuario_id=request.usuario_id,
+            titulo="Relatório de Assertividade dos SKUs"
+        )
+        
+        print(f"Relatório gerado e salvo com sucesso")
+        return {
+            "resumo": relatorio_assertividade["resumo"],
+            "melhores_skus": relatorio_assertividade["melhores_skus"],
+            "piores_skus": relatorio_assertividade["piores_skus"],
+            "arquivo": caminho,
+            "status": "sucesso"
+        }
+    except Exception as e:
+        print(f"Erro ao gerar assertividade: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return {"erro": str(e), "status": "erro"}
 
 @app.get("/relatorio/conteudo")  # Da main (Felipe)
 def obter_conteudo(caminho: str):

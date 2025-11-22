@@ -9,7 +9,9 @@ import {
   excluirRelatorio,
   gerarRelatorioGeral,
   gerarRelatorioSku,
+  gerarAssertividadeSkus,
   listarRelatorios,
+  debugRelatorios,
 } from "../controllers/RelatorioController";
 import { enviarRelatorioPorEmail } from "../controllers/enviarEmailController";
 import { atualizarUsuario, cadastrarUsuario, deletarUsuario, listarUsuarios, obterUsuarioAtual } from "../controllers/UsuarioController";
@@ -31,7 +33,9 @@ router.get("/usuario/atual", authMiddleware, obterUsuarioAtual);
 // rotas relatório
 router.post("/relatorio/geral", authMiddleware, gerarRelatorioGeral);
 router.post("/relatorio/skus", authMiddleware, gerarRelatorioSku);
+router.post("/relatorio/skus-assertividade", authMiddleware, gerarAssertividadeSkus);
 router.get("/relatorio/listar", authMiddleware, listarRelatorios);
+router.get("/relatorio/debug", debugRelatorios);
 router.post("/relatorio/enviar-email", authMiddleware, enviarRelatorioPorEmail);
 router.delete("/relatorio/:id", authMiddleware, excluirRelatorio);
 router.put("/relatorio/atualizar/:id", authMiddleware, atualizarRelatorio);

@@ -145,9 +145,9 @@ export async function listarRelatorios(req: Request, res: Response) {
     const usuarioId = req.user?.id;
 
     const [relatorios] = await db.query(
-      `SELECT id, titulo, caminho_arquivo, criado_em 
-       FROM relatorio 
-       WHERE usuario_id = ? 
+      `SELECT id, titulo, caminho_arquivo, criado_em
+       FROM relatorio
+       WHERE usuario_id = ?
        ORDER BY criado_em DESC`,
       [usuarioId],
     );
@@ -235,5 +235,45 @@ export async function excluirRelatorio(req: Request, res: Response) {
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: "Erro ao excluir relatório" });
+  }
+}
+
+export async function gerarAssertividadeSkus(req: Request, res: Response) {
+  try {
+    
+    const usuarioId = req.user?.id;
+    const resp = await axios.post(`${PLN_URL}/relatorio-skus-assertividade`, {
+      usuario_id: usuarioId,
+      data_inicio: req.body.data_inicio,
+      data_fim: req.body.data_fim,
+      incluir_todos_skus: req.body.incluir_todos_skus,
+      skus: req.body.skus,
+      topicos: req.body.topicos || []
+    });
+    
+    return res.json(resp.data);
+  } catch (err: any) {
+    console.error("Erro ao gerar assertividade:", err.message);
+    console.error("Detalhes:", err.response?.data || err.message);
+    return res.status(500).json({ 
+      error: "Erro ao gerar assertividade dos SKUs",
+      details: err.message 
+    });
+  }
+}
+
+export async function debugRelatorios(req: Request, res: Response) {
+  try {
+    const [relatorios]: any = await db.query(
+      `SELECT usuario_id, COUNT(*) as total FROM relatorio GROUP BY usuario_id ORDER BY usuario_id`
+    );
+
+    return res.json({
+      debug: true,
+      relatoriosPorUsuario: relatorios
+    });
+  } catch (err: any) {
+    console.error(err);
+    return res.status(500).json({ error: "Erro ao debug" });
   }
 }
