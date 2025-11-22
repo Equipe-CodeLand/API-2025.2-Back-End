@@ -39,6 +39,8 @@ router.put("/relatorio/atualizar/:id", authMiddleware, atualizarRelatorio);
 
 router.post("/chat", authMiddleware, chatController.enviarMensagem);
 router.post("/chat/criar", authMiddleware, chatController.criarChat);
+router.get("/chats", authMiddleware, chatController.listarChats);
+router.get("/chat/:chatId/mensagens", authMiddleware, chatController.listarMensagens);
 
 
 /* Rota para autenticação */
