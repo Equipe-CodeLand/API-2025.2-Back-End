@@ -48,17 +48,13 @@ async function criarChat(req: Request, res: Response) {
             [primeiraMensagem, data]
         );
 
-        const chatId = chatResult.insertId; 
+        const chatId = chatResult.insertId;
 
         await db.query(
             "INSERT INTO chat_usuario (chat_id, usuario_id) VALUES (?, ?)",
             [chatId, usuarioId]
         );
 
-        await db.query(
-            "INSERT INTO chat_mensagens (chat_id, usuario_id, mensagem, tipo, criado_em) VALUES (?, ?, ?, ?, ?)",
-            [chatId, usuarioId, primeiraMensagem, "usuario", data]
-        );
 
         return res.json({
             chat_id: chatId,
@@ -70,6 +66,7 @@ async function criarChat(req: Request, res: Response) {
         return res.status(500).json({ error: "Erro ao criar chat: " + err.message });
     }
 }
+
 
 
 async function listarChats(req: Request, res: Response) {
