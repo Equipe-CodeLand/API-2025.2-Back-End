@@ -162,9 +162,40 @@ async function listarMensagens(req: Request, res: Response) {
     }
 }
 
+async function atualizarTitulo(req: Request, res: Response) {
+  try {
+    const usuarioId = req.user?.id;
+    const chatId = req.params.chatId;
+    const { titulo } = req.body;
+
+    if (!usuarioId) {
+      return res.status(401).json({ error: "Usuário não autenticado" });
+    }
+
+    const [verifica]: any = await db.query(
+      "SELECT 1 FROM chat_usuario WHERE chat_id = ? AND usuario_id = ?",
+      [chatId, usuarioId],
+    );
+
+    if (verifica.length === 0) {
+      return res.status(403).json({ error: "Você não tem acesso a este chat" });
+    }
+
+    await db.query("UPDATE chat SET titulo = ? WHERE id = ?", [titulo, chatId]);
+
+    return res.json({ message: "Título atualizado", titulo });
+  } catch (err: any) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ error: "Erro ao atualizar título: " + err.message });
+  }
+}
+
 export default {
     enviarMensagem,
     criarChat,
     listarChats,
-    listarMensagens
+    listarMensagens,
+    atualizarTitulo
 };
