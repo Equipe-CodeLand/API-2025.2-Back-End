@@ -1,9 +1,9 @@
+import { authMiddleware } from './../middlewares/auth';
 import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
 import { Router } from "express";
 import db from "../db/db";
 import axios from "axios";
-import { authMiddleware } from "../middlewares/auth";
 import {
   atualizarRelatorio,
   excluirRelatorio,
@@ -43,6 +43,11 @@ router.put("/relatorio/atualizar/:id", authMiddleware, atualizarRelatorio);
 
 router.post("/chat", authMiddleware, chatController.enviarMensagem);
 router.post("/chat/criar", authMiddleware, chatController.criarChat);
+router.get("/chats", authMiddleware, chatController.listarChats);
+router.get("/chat/:chatId/mensagens", authMiddleware, chatController.listarMensagens);
+router.put("/chat/:chatId/titulo", authMiddleware, chatController.atualizarTitulo);
+router.delete("/chat/:id",authMiddleware, chatController.excluirChat);
+
 
 
 /* Rota para autenticação */
